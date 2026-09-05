@@ -941,6 +941,14 @@ export default function Home() {
       'idle' | 'sending' | 'success' | 'error'
     >('idle'),
     [guest, setGuest] = useState({ name: '', dishName: '', content: '' });
+  const [agentOpen, setAgentOpen] = useState(true),
+    [agentCode, setAgentCode] = useState(''),
+    [agentMessage, setAgentMessage] = useState(''),
+    [agentMessages, setAgentMessages] = useState<
+      { role: 'user' | 'assistant'; text: string }[]
+    >([]),
+    [agentBusy, setAgentBusy] = useState(false),
+    [agentError, setAgentError] = useState('');
   const query = ingredient.trim().toLowerCase();
   const suggestions = useMemo(
     () =>
@@ -1011,6 +1019,69 @@ export default function Home() {
       setGuest({ name: '', dishName: '', content: '' });
     } catch {
       setSubmitState('error');
+    }
+  }
+  async function askAgent(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const message = agentMessage.trim();
+    if (!message || !agentCode.trim() || agentBusy) return;
+    setAgentMessage('');
+    setAgentError('');
+    setAgentMessages((current) => [
+      ...current,
+      { role: 'user', text: message },
+    ]);
+    setAgentBusy(true);
+    try {
+      if (isStatic) {
+        const best = sorted[0];
+        const missing = missingFor(best).map((id) => itemName(id, lang));
+        const answer =
+          lang === 'zh'
+            ? `【演示模式】按你当前选择，优先推荐「${best.zh}」。${missing.length ? `还缺：${missing.join('、')}。` : '最低食材已经齐全。'}\n\n你可以先打开这道菜查看详细步骤、1–9 档火力和佐料。若想让 AI 真正分析你的口味，请在服务器版配置访问密码和模型密钥。`
+            : `[Preview mode] Your best match is “${best.en}”. ${missing.length ? `Still needed: ${missing.join(', ')}.` : 'All minimum ingredients are ready.'}\n\nOpen the recipe for detailed steps, 1–9 heat levels and seasonings. Configure the protected server endpoint for live AI analysis.`;
+        setAgentMessages((current) => [
+          ...current,
+          { role: 'assistant', text: answer },
+        ]);
+        return;
+      }
+      const response = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          ingredients: owned.map((id) => itemName(id, lang)),
+          locale: lang,
+          accessCode: agentCode.trim(),
+        }),
+      });
+      const payload = (await response.json()) as {
+        answer?: string;
+        error?: string;
+      };
+      if (!response.ok) throw new Error(payload.error || 'agent_error');
+      setAgentMessages((current) => [
+        ...current,
+        { role: 'assistant', text: payload.answer || '' },
+      ]);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'agent_error';
+      setAgentError(
+        code === 'rate_limit'
+          ? lang === 'zh'
+            ? '普通密码已达到每小时 5 次上限。'
+            : 'This access code reached its hourly limit.'
+          : code === 'invalid_access_code'
+            ? lang === 'zh'
+              ? '密码不正确，请检查后重试。'
+              : 'Invalid access code.'
+            : lang === 'zh'
+              ? 'Agent 暂时不可用，请稍后再试。'
+              : 'The agent is temporarily unavailable.',
+      );
+    } finally {
+      setAgentBusy(false);
     }
   }
   useEffect(() => {
@@ -1190,6 +1261,119 @@ export default function Home() {
                   </div>
                 ),
               )}
+            </div>
+          )}
+        </section>
+        <section className={`agent-panel ${agentOpen ? 'is-open' : ''}`}>
+          <button
+            className="agent-panel-toggle"
+            onClick={() => setAgentOpen((open) => !open)}
+            aria-expanded={agentOpen}
+          >
+            <span className="agent-mark">
+              <Zap />
+            </span>
+            <span>
+              <strong>
+                {lang === 'zh' ? 'AI 厨神 Agent' : 'AI Cooking Agent'}
+              </strong>
+              <small>
+                {lang === 'zh'
+                  ? '告诉我你有什么、想吃什么，我来组合菜谱'
+                  : 'Tell me what you have and what you want to eat'}
+              </small>
+            </span>
+            <span className="agent-lock">
+              {lang === 'zh' ? '受控访问' : 'Protected'} <ChevronDown />
+            </span>
+          </button>
+          {agentOpen && (
+            <div className="agent-panel-body">
+              <div className="agent-intro">
+                <div>
+                  <h2>
+                    {lang === 'zh'
+                      ? '从食材到做法，一起规划'
+                      : 'Plan a dish from your pantry'}
+                  </h2>
+                  <p>
+                    {lang === 'zh'
+                      ? 'Agent 会优先匹配现有菜谱；缺料时会列出缺少项，也可以按你的条件设计创新菜。'
+                      : 'The agent matches your pantry first, lists missing items, and can design a custom dish when needed.'}
+                  </p>
+                </div>
+                <span className="agent-prompt-hint">
+                  {lang === 'zh'
+                    ? '示例：我有鸡蛋和西红柿，想少油、15 分钟内完成'
+                    : 'Example: I have eggs and tomato; low oil, ready in 15 minutes'}
+                </span>
+              </div>
+              <div className="agent-access">
+                <label>
+                  {lang === 'zh' ? '访问密码' : 'Access code'}
+                  <Input
+                    type="password"
+                    value={agentCode}
+                    onChange={(e) => setAgentCode(e.target.value)}
+                    placeholder={
+                      lang === 'zh'
+                        ? '输入作者提供的密码'
+                        : 'Enter the code provided by the author'
+                    }
+                  />
+                </label>
+                <small>
+                  {lang === 'zh'
+                    ? '普通密码每小时最多 5 次；管理员密码不受次数限制。密码只发送到受保护服务器，不会交给模型。'
+                    : 'Standard codes allow 5 requests/hour; admin codes are unlimited. The code is sent only to the protected server, never to the model.'}
+                </small>
+              </div>
+              {agentMessages.length > 0 && (
+                <div className="agent-thread">
+                  {agentMessages.map((item, index) => (
+                    <div
+                      key={`${item.role}-${index}`}
+                      className={`agent-bubble ${item.role}`}
+                    >
+                      <span>
+                        {item.role === 'user'
+                          ? lang === 'zh'
+                            ? '你'
+                            : 'You'
+                          : 'AI'}
+                      </span>
+                      <p>{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <form className="agent-form" onSubmit={askAgent}>
+                <Input
+                  value={agentMessage}
+                  onChange={(e) => setAgentMessage(e.target.value)}
+                  placeholder={
+                    lang === 'zh'
+                      ? '描述你的食材、口味、时间或设备条件…'
+                      : 'Describe ingredients, taste, time, or equipment…'
+                  }
+                />
+                <Button
+                  type="submit"
+                  disabled={
+                    !agentCode.trim() || !agentMessage.trim() || agentBusy
+                  }
+                >
+                  <Send />
+                  {agentBusy
+                    ? lang === 'zh'
+                      ? '思考中…'
+                      : 'Thinking…'
+                    : lang === 'zh'
+                      ? '询问 Agent'
+                      : 'Ask agent'}
+                </Button>
+              </form>
+              {agentError && <p className="agent-error">{agentError}</p>}
             </div>
           )}
         </section>

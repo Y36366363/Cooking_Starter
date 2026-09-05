@@ -12,11 +12,25 @@
 - 菜谱难度、时间和电磁炉 1–9 档火力路线
 - 菜谱详情中的最低食材对比、可选加料与必需 / 推荐佐料
 - 12 道带成品图片的入门菜谱及更具体的分步指导
+- 受控访问的 AI 厨神 Agent 对话区，可根据食材、口味、时间和设备条件给出建议
 - 优先展示作者亲自成功试做的家常菜
 - 适配桌面和手机屏幕
 - 访客菜谱投稿界面；服务器版本写入待审核数据库
 
 当前首批实测菜谱包括西红柿炒鸡蛋、辣椒炒肉末、辣椒炒肉片、黄瓜炒肉末、清炒小白菜、小白菜炒肉末和煎荷包蛋。
+
+### Agent 接入方式
+
+公开 GitHub Pages 版本包含完整的 Agent 对话界面和演示模式，但不会在浏览器中放置 LLM API Key。要启用真实模型调用，请在服务器部署环境中配置：
+
+```text
+OPENAI_API_KEY=你的服务端密钥
+OPENAI_MODEL=gpt-4o-mini                 # 可选
+COOKING_AGENT_ACCESS_CODE=普通访问密码     # 每个进程窗口每小时 5 次
+COOKING_AGENT_ADMIN_CODE=管理员密码         # 不受次数限制
+```
+
+真实调用通过 `/api/agent` 完成。访问密码只用于服务器鉴权，不会发送给模型；普通密码的简单限流为每小时 5 次，管理员密码不受该限制。正式多实例部署时，建议把限流计数迁移到 D1 或 KV，以便所有实例共享额度。GitHub Pages 上没有服务器运行时，因此对话区会明确标识为演示模式，不会产生外部模型费用。
 
 ## 公开预览
 
@@ -68,10 +82,13 @@ Shizhi is a bilingual cooking-agent prototype focused on induction hobs. It is d
 - Difficulty, cooking time, and practical 1–9 induction guidance
 - Required ingredients, optional add-ins, required/recommended seasonings, and detailed steps
 - 12 illustrated beginner recipes
+- Protected AI cooking-agent conversation with pantry-aware recommendations
 - Kitchen-tested recipes shown first
 - Responsive desktop and mobile layout
 
 The public GitHub Pages build is static. Core recipe features work normally, while guest submissions remain disabled until a secure public backend is connected. The server build already includes a review-queue API backed by D1.
+
+The public build never contains an LLM key. A server deployment can enable `/api/agent` with `OPENAI_API_KEY`, `COOKING_AGENT_ACCESS_CODE` (5 requests/hour), and `COOKING_AGENT_ADMIN_CODE` (unlimited). The access code is checked server-side and is never sent to the model.
 
 ### Development
 
