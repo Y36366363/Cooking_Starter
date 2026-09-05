@@ -1,110 +1,77 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, Bot, ChevronRight, Clock3, Flame, Leaf, Library, Plus, Search, Settings2, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ArrowDown, BookOpen, Check, ChefHat, ChevronRight, Clock3, Flame, Globe2, Lightbulb, MessageSquarePlus, Plus, Search, Send, Star, Utensils, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
-type Recipe = { id: number; title: string; type: string; time: number; level: string; ingredients: string[]; note: string };
+type Lang = 'zh' | 'en';
+type Recipe = {
+  id: string; zh: string; en: string; difficulty: number; minutes: number; power: string;
+  ingredients: string[]; ingredientEn: string[]; descZh: string; descEn: string;
+  stepsZh: string[]; stepsEn: string[]; tested?: boolean;
+};
 type WebMcpContext = { registerTool: (tool: Record<string, unknown>, options?: { signal?: AbortSignal }) => void | Promise<void> };
 declare global { interface Document { modelContext?: WebMcpContext } }
-const seedRecipes: Recipe[] = [
-  { id: 1, title: '番茄炒蛋', type: '家常快手', time: 12, level: '新手', ingredients: ['番茄', '鸡蛋', '小葱'], note: '先把蛋炒至七成熟盛出，番茄出沙后再回锅，口感会更嫩。' },
-  { id: 2, title: '香菇青菜', type: '清淡素食', time: 15, level: '新手', ingredients: ['上海青', '香菇', '蒜'], note: '菜梗先入锅，菜叶后放；大火快炒能减少出水。' },
-  { id: 3, title: '可乐鸡翅', type: '下饭菜', time: 35, level: '熟练', ingredients: ['鸡翅', '姜', '可乐'], note: '鸡翅擦干再煎，收汁阶段勤翻动，避免糖分焦苦。' },
+
+const recipes: Recipe[] = [
+  { id:'tomato-egg', zh:'西红柿炒鸡蛋', en:'Tomato & Egg Stir-fry', difficulty:1, minutes:12, power:'1400W → 800W', tested:true, ingredients:['西红柿','鸡蛋','小葱'], ingredientEn:['tomato','egg','scallion'], descZh:'留学生厨房的第一道中式快炒。用功率而不是“中大火”来控制结果。', descEn:'A first Chinese stir-fry for any student kitchen—guided by watts, not vague heat levels.', stepsZh:['1400W 热锅 40 秒，倒油后下蛋液。','蛋液刚凝固就盛出，避免余温变老。','西红柿 1200W 炒出汁，转 800W 回锅合炒。'], stepsEn:['Preheat at 1400W for 40 seconds; add oil and beaten eggs.','Remove eggs as soon as softly set to avoid overcooking.','Cook tomatoes at 1200W until juicy; return eggs at 800W.'] },
+  { id:'pepper-mince', zh:'辣椒炒肉末', en:'Pepper with Minced Pork', difficulty:2, minutes:16, power:'1600W → 1000W', tested:true, ingredients:['辣椒','猪肉末','蒜'], ingredientEn:['pepper','minced pork','garlic'], descZh:'肉末炒散后再放辣椒，适合单灶电磁炉的顺序烹饪。', descEn:'Brown the mince first, then add peppers—ideal sequencing for a single induction hob.', stepsZh:['锅烧到 1600W，肉末分散下锅。','肉末变色后推到一侧，蒜末爆香。','加入辣椒，1000W 翻炒至断生。'], stepsEn:['Heat to 1600W and spread the mince across the pan.','When browned, push aside and bloom the garlic.','Add peppers; finish at 1000W until just tender.'] },
+  { id:'pepper-pork', zh:'辣椒炒肉片', en:'Pepper Pork Stir-fry', difficulty:2, minutes:20, power:'1600W → 900W', tested:true, ingredients:['辣椒','猪肉片','姜'], ingredientEn:['pepper','sliced pork','ginger'], descZh:'薄切和提前腌制是关键，高功率快炒避免肉片出水。', descEn:'Thin slicing and a short marinade keep the pork tender during high-power cooking.', stepsZh:['肉片提前用生抽和淀粉腌 10 分钟。','1600W 快速滑炒至八成熟，先盛出。','辣椒炒香后转 900W，肉片回锅。'], stepsEn:['Marinate pork with soy sauce and starch for 10 minutes.','Stir-fry at 1600W until almost done; remove.','Cook peppers, lower to 900W, then return pork.'] },
+  { id:'cucumber-mince', zh:'黄瓜炒肉末', en:'Cucumber with Minced Pork', difficulty:2, minutes:15, power:'1400W → 900W', tested:true, ingredients:['黄瓜','猪肉末','蒜'], ingredientEn:['cucumber','minced pork','garlic'], descZh:'黄瓜最后下锅，保留脆度，也减少电磁炉锅内积水。', descEn:'Add cucumber last to preserve crunch and prevent liquid pooling on induction.', stepsZh:['1400W 将肉末炒至微焦。','加入蒜末和调味料快速翻匀。','下黄瓜，900W 炒 60–90 秒即出锅。'], stepsEn:['Brown mince at 1400W until lightly crisp.','Add garlic and seasonings; toss quickly.','Add cucumber at 900W for just 60–90 seconds.'] },
+  { id:'bok-choy', zh:'清炒小白菜', en:'Garlic Bok Choy', difficulty:1, minutes:8, power:'1600W', tested:true, ingredients:['小白菜','蒜'], ingredientEn:['bok choy','garlic'], descZh:'最短的入门菜：擦干菜叶、大功率、短时间。', descEn:'The shortest beginner recipe: dry leaves, high power, very little time.', stepsZh:['小白菜洗净后充分沥干。','1600W 热锅，下油和蒜末 10 秒。','先下菜梗再下菜叶，炒至刚变软。'], stepsEn:['Wash and thoroughly dry the bok choy.','At 1600W, add oil and garlic for 10 seconds.','Cook stems first, then leaves; stop as they soften.'] },
+  { id:'bok-choy-mince', zh:'小白菜炒肉末', en:'Bok Choy with Minced Pork', difficulty:2, minutes:14, power:'1500W → 1000W', tested:true, ingredients:['小白菜','猪肉末','蒜'], ingredientEn:['bok choy','minced pork','garlic'], descZh:'一锅完成蛋白质和蔬菜，先荤后素避免白菜过熟。', descEn:'Protein and greens in one pan; cook meat first so the bok choy stays bright.', stepsZh:['1500W 炒散肉末并盛出多余油脂。','加入蒜末，再下小白菜梗。','转 1000W，下菜叶和肉末快速合炒。'], stepsEn:['Brown mince at 1500W and remove excess fat.','Add garlic, followed by bok choy stems.','Lower to 1000W; toss leaves and mince together.'] },
+  { id:'fried-egg', zh:'煎荷包蛋', en:'Induction Fried Egg', difficulty:1, minutes:6, power:'1000W → 500W', tested:true, ingredients:['鸡蛋'], ingredientEn:['egg'], descZh:'先中功率定型，再低功率焖熟，解决电磁炉局部过热。', descEn:'Set at medium power, then finish low to handle induction hot spots.', stepsZh:['1000W 预热平底锅 30 秒并加油。','打入鸡蛋，边缘定型后转 500W。','加一勺水并盖盖，焖到蛋白完全凝固。'], stepsEn:['Preheat at 1000W for 30 seconds and add oil.','Crack in the egg; lower to 500W once edges set.','Add a spoonful of water, cover, and steam until white is set.'] },
 ];
-const nav = [
-  { label: '智能烹饪台', icon: Sparkles, active: true }, { label: '我的菜谱', icon: Library },
-  { label: '基础课堂', icon: BookOpen }, { label: '偏好与设备', icon: Settings2 },
-];
+
+const copy = {
+  zh: { brand:'食知', sub:'留学生电磁炉菜谱', tested:'实测成功', guest:'访客投稿', myIngredients:'我现在有', ingredientHint:'先选择食材，我们会显示每道菜还缺什么', add:'输入食材后回车', recommend:'你现在最适合做', recommendSub:'按已有食材匹配，实测菜谱优先', can:'现在就能做', missing:'还缺', item:'样', induction:'电磁炉', gas:'燃气灶 · 稍后', all:'全部菜谱', allSub:'继续往下按菜名或食材搜索', search:'搜索菜名或食材', minutes:'分钟', watts:'功率路线', difficulty:'难度', open:'查看做法与对比', have:'你已经有', need:'还需要', steps:'电磁炉步骤', tip:'电磁炉提示', tipText:'不同机器实际火力有差异。第一次做时以状态判断为主，瓦数用于建立可重复的起点。', submitTitle:'分享你的菜谱或改进建议', submitDesc:'投稿会进入待审核列表。通过后才会转交作者，不会在页面展示作者邮箱。', name:'怎么称呼你', dish:'菜名', content:'步骤、功率、用量或改进建议', send:'提交审核', sending:'正在提交…', success:'已收到，谢谢！审核后会转交作者。', error:'暂时没有提交成功，请稍后重试。', close:'关闭' },
+  en: { brand:'SHIZHI', sub:'Induction recipes for students', tested:'Kitchen-tested', guest:'Share a recipe', myIngredients:'What I have', ingredientHint:'Choose ingredients first—we will show what each recipe is missing', add:'Type an ingredient and press Enter', recommend:'Best matches right now', recommendSub:'Matched to your pantry, with kitchen-tested recipes first', can:'Ready to cook', missing:'Missing', item:'', induction:'Induction', gas:'Gas stove · Later', all:'All recipes', allSub:'Scroll down to search by dish or ingredient', search:'Search dishes or ingredients', minutes:'min', watts:'Power map', difficulty:'Difficulty', open:'View method & comparison', have:'You have', need:'You still need', steps:'Induction steps', tip:'Induction note', tipText:'Actual heat varies by hob. On your first try, judge by the food; use wattage as a repeatable starting point.', submitTitle:'Share a recipe or improvement', submitDesc:'Your note enters a review queue. Only useful submissions are forwarded, and the author’s email is never shown.', name:'Your name', dish:'Dish name', content:'Steps, wattage, quantities, or suggestions', send:'Submit for review', sending:'Submitting…', success:'Received—thank you! It will be reviewed before forwarding.', error:'Could not submit right now. Please try again later.', close:'Close' },
+};
 
 export default function Home() {
-  const [recipes, setRecipes] = useState<Recipe[]>(seedRecipes);
-  const [ingredients, setIngredients] = useState('番茄、鸡蛋、小葱');
-  const [time, setTime] = useState('20 分钟内');
-  const [goal, setGoal] = useState('省时家常');
-  const [vegetarian, setVegetarian] = useState(false);
-  const [result, setResult] = useState<Recipe | null>(seedRecipes[0]);
-  const [thinking, setThinking] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ title: '', ingredients: '', note: '' });
-  const recipesRef = useRef(recipes);
-
-  useEffect(() => { recipesRef.current = recipes; }, [recipes]);
+  const [lang, setLang] = useState<Lang>('zh'); const t = copy[lang];
+  const [owned, setOwned] = useState(['西红柿','鸡蛋','小葱']); const [ingredient, setIngredient] = useState('');
+  const [search, setSearch] = useState(''); const [selected, setSelected] = useState<Recipe | null>(null);
+  const [guestOpen, setGuestOpen] = useState(false); const [submitState, setSubmitState] = useState<'idle'|'sending'|'success'|'error'>('idle');
+  const [guest, setGuest] = useState({ name:'', dishName:'', content:'' });
+  const normalizedOwned = owned.map((item) => item.toLowerCase());
+  const score = (recipe: Recipe) => (lang === 'zh' ? recipe.ingredients : recipe.ingredientEn).filter((item) => normalizedOwned.includes(item.toLowerCase())).length;
+  const sorted = useMemo(() => [...recipes].sort((a,b) => score(b)-score(a) || Number(Boolean(b.tested))-Number(Boolean(a.tested))), [owned, lang]);
+  const filtered = recipes.filter((recipe) => !search.trim() || [...recipe.ingredients,...recipe.ingredientEn,recipe.zh,recipe.en].join(' ').toLowerCase().includes(search.toLowerCase()));
+  function addIngredient(event: React.KeyboardEvent<HTMLInputElement>) { if (event.key !== 'Enter' || !ingredient.trim()) return; event.preventDefault(); if (!owned.includes(ingredient.trim())) setOwned([...owned, ingredient.trim()]); setIngredient(''); }
+  const recipeIngredients = (recipe: Recipe) => lang === 'zh' ? recipe.ingredients : recipe.ingredientEn;
+  const missingFor = (recipe: Recipe) => recipeIngredients(recipe).filter((item) => !normalizedOwned.includes(item.toLowerCase()));
+  async function submitGuest(event: FormEvent) { event.preventDefault(); setSubmitState('sending'); try { const response = await fetch('/api/submissions', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ ...guest, locale:lang }) }); if (!response.ok) throw new Error(); setSubmitState('success'); setGuest({ name:'', dishName:'', content:'' }); } catch { setSubmitState('error'); } }
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('shizhi-recipes');
-    if (saved) try { setRecipes(JSON.parse(saved)); } catch { window.localStorage.removeItem('shizhi-recipes'); }
-  }, []);
-  useEffect(() => {
-    const context = document.modelContext;
-    if (!context?.registerTool) return;
-    const lifecycle = new AbortController();
-    const registration = context.registerTool({
-      name: 'create_recipe', title: '录入菜谱教学',
-      description: '把一道菜的名称、食材与关键教学保存到当前食知知识库。',
-      inputSchema: { type: 'object', properties: { title: { type: 'string', minLength: 1 }, ingredients: { type: 'array', minItems: 1, items: { type: 'string' } }, note: { type: 'string' } }, required: ['title', 'ingredients'], additionalProperties: false },
-      annotations: { readOnlyHint: false, untrustedContentHint: true },
-      execute(input: unknown) {
-        const value = input as { title?: unknown; ingredients?: unknown; note?: unknown };
-        if (typeof value.title !== 'string' || !value.title.trim() || !Array.isArray(value.ingredients) || !value.ingredients.every((item) => typeof item === 'string' && item.trim())) throw new Error('菜名和至少一种有效食材为必填项');
-        const next: Recipe = { id: Date.now(), title: value.title.trim(), type: 'Agent 录入', time: 25, level: '自定义', ingredients: value.ingredients.map((item) => String(item).trim()), note: typeof value.note === 'string' && value.note.trim() ? value.note.trim() : '这道菜还没有教学笔记，可以随时继续编辑。' };
-        const updated = [next, ...recipesRef.current]; recipesRef.current = updated; setRecipes(updated); setResult(next); window.localStorage.setItem('shizhi-recipes', JSON.stringify(updated));
-        return { id: next.id, title: next.title, saved: true };
-      },
-    }, { signal: lifecycle.signal });
-    Promise.resolve(registration).catch(() => lifecycle.abort());
-    return () => lifecycle.abort();
-  }, []);
-  const ingredientList = useMemo(() => ingredients.split(/[、,，\s]+/).map((item) => item.trim()).filter(Boolean), [ingredients]);
-  function analyze() {
-    setThinking(true);
-    window.setTimeout(() => {
-      const pool = vegetarian ? recipes.filter((recipe) => !recipe.ingredients.some((item) => /肉|鸡|鱼|虾|牛|羊/.test(item))) : recipes;
-      const matched = pool.find((recipe) => recipe.ingredients.some((item) => ingredientList.some((input) => item.includes(input) || input.includes(item))));
-      setResult(matched ?? pool[0] ?? recipes[0] ?? null); setThinking(false);
-    }, 650);
-  }
-  function openCreate() { setEditingId(null); setForm({ title: '', ingredients: '', note: '' }); setDialogOpen(true); }
-  function openEdit(recipe: Recipe) { setEditingId(recipe.id); setForm({ title: recipe.title, ingredients: recipe.ingredients.join('、'), note: recipe.note }); setDialogOpen(true); }
-  function saveRecipe() {
-    if (!form.title.trim() || !form.ingredients.trim()) return;
-    const next: Recipe = { id: Date.now(), title: form.title.trim(), type: '我的教学', time: 25, level: '自定义', ingredients: form.ingredients.split(/[、,，\n]+/).map((item) => item.trim()).filter(Boolean), note: form.note.trim() || '这道菜还没有教学笔记，可以随时继续编辑。' };
-    const updated = editingId ? recipes.map((recipe) => recipe.id === editingId ? { ...recipe, title: next.title, ingredients: next.ingredients, note: next.note } : recipe) : [next, ...recipes];
-    setRecipes(updated); window.localStorage.setItem('shizhi-recipes', JSON.stringify(updated));
-    setForm({ title: '', ingredients: '', note: '' }); setDialogOpen(false);
-  }
+    const context = document.modelContext; if (!context?.registerTool) return; const lifecycle = new AbortController();
+    const registration = context.registerTool({ name:'open_recipe', title:'打开菜谱详情', description:'按菜谱 ID 打开菜谱，并显示用户已有与缺少的食材。', inputSchema:{ type:'object', properties:{ recipeId:{ type:'string', enum:recipes.map((recipe)=>recipe.id) } }, required:['recipeId'], additionalProperties:false }, annotations:{ readOnlyHint:true, untrustedContentHint:false }, execute(input:unknown){ const id=(input as {recipeId?:unknown}).recipeId; const recipe=recipes.find((item)=>item.id===id); if(!recipe) throw new Error('Recipe not found'); setSelected(recipe); return { recipeId:recipe.id, title:lang==='zh'?recipe.zh:recipe.en, missing:missingFor(recipe) }; } }, { signal:lifecycle.signal });
+    Promise.resolve(registration).catch(()=>lifecycle.abort()); return ()=>lifecycle.abort();
+  }, [lang, owned]);
 
-  return <main className="app-shell">
-    <aside className="sidebar">
-      <div className="brand"><span className="brand-mark"><Flame /></span><div><strong>食知</strong><small>Cooking Agent</small></div></div>
-      <nav aria-label="主要导航">{nav.map(({ label, icon: Icon, active }) => <button className={active ? 'nav-item active' : 'nav-item'} key={label}><Icon />{label}</button>)}</nav>
-      <div className="sidebar-note"><span className="pulse-dot" /><div><strong>知识库已就绪</strong><small>{recipes.length} 道菜谱 · 本机保存</small></div></div>
-    </aside>
-    <section className="workspace">
-      <header className="topbar"><div><p>晚上好，今天想怎么吃？</p><h1>让食材决定下一顿饭</h1></div><Button className="add-button" onClick={openCreate}><Plus />录入我的菜谱</Button></header>
-      <div className="agent-hero"><img src="/kitchen-workspace.png" alt="热锅旁准备好的番茄、鸡蛋和青菜" /><div className="hero-shade" /><div className="hero-copy"><span><Bot /> 食知 Agent</span><h2>把你手边的食材，<br />变成今晚可执行的一餐。</h2><p>会结合你的时间、口味、厨具与已有教学来给出建议。</p></div></div>
-      <section className="agent-panel" aria-label="食材分析条件">
-        <div className="panel-heading"><div><span className="eyebrow">STEP 01</span><h2>告诉我现有食材</h2></div><span className="mode-pill"><span />本地推理演示</span></div>
-        <label className="ingredient-field"><Search /><Input value={ingredients} onChange={(event) => setIngredients(event.target.value)} placeholder="例如：鸡蛋、番茄、豆腐……" /></label>
-        <div className="condition-row">
-          <div className="condition"><span>可用时间</span><Select value={time} onValueChange={(value) => setTime(value ?? '20 分钟内')}><SelectTrigger><Clock3 /><SelectValue /></SelectTrigger><SelectContent><SelectItem value="20 分钟内">20 分钟内</SelectItem><SelectItem value="40 分钟内">40 分钟内</SelectItem><SelectItem value="不限时间">不限时间</SelectItem></SelectContent></Select></div>
-          <div className="condition"><span>烹饪目标</span><Select value={goal} onValueChange={(value) => setGoal(value ?? '省时家常')}><SelectTrigger><UtensilsCrossed /><SelectValue /></SelectTrigger><SelectContent><SelectItem value="省时家常">省时家常</SelectItem><SelectItem value="低脂高蛋白">低脂高蛋白</SelectItem><SelectItem value="练习厨艺">练习厨艺</SelectItem></SelectContent></Select></div>
-          <label className="check-condition"><Checkbox checked={vegetarian} onCheckedChange={(value) => setVegetarian(Boolean(value))} /><span><strong>只看素食</strong><small>排除肉类与海鲜</small></span></label>
-          <Button className="analyze-button" onClick={analyze} disabled={thinking}>{thinking ? '正在分析…' : '开始分析'}<Sparkles /></Button>
-        </div>
-      </section>
-      <div className="content-grid">
-        <section className="recommendation"><div className="section-title"><div><span className="eyebrow">STEP 02</span><h2>Agent 的建议</h2></div><button>查看分析逻辑 <ChevronRight /></button></div>
-          {result ? <article className="result-card"><div className="result-main"><div className="recipe-icon"><UtensilsCrossed /></div><div><div className="recipe-labels"><span>首选方案</span><small>{goal} · {time}</small></div><h3>{result.title}</h3><p>{result.note}</p><div className="tags"><span><Clock3 />约 {result.time} 分钟</span><span><Flame />{result.level}</span><span><Leaf />食材匹配 {Math.min(ingredientList.length, result.ingredients.length)}/{result.ingredients.length}</span></div></div></div><div className="agent-reason"><Bot /><p><strong>为什么推荐它</strong>你已有核心食材，步骤少、容错高。建议先处理最耗时的食材，最后再做容易出水或过熟的部分。</p></div></article> : <div className="empty-state">先录入一道菜谱，再让 Agent 为你匹配。</div>}
-        </section>
-        <aside className="library-card"><div className="section-title"><div><span className="eyebrow">你的知识库</span><h2>最近菜谱</h2></div><button>全部</button></div><div className="recipe-list">{recipes.slice(0, 4).map((recipe) => <div className="recipe-row" key={recipe.id}><button onClick={() => setResult(recipe)}><span>{recipe.title.slice(0, 1)}</span><div><strong>{recipe.title}</strong><small>{recipe.type} · {recipe.time} 分钟</small></div><ChevronRight /></button><button className="edit-recipe" onClick={() => openEdit(recipe)}>编辑</button></div>)}</div></aside>
-      </div>
-    </section>
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogContent className="recipe-dialog"><DialogHeader><DialogTitle>{editingId ? '编辑菜谱教学' : '录入我的菜谱教学'}</DialogTitle><DialogDescription>先保存最重要的做法和判断标准，之后可继续完善。</DialogDescription></DialogHeader><div className="form-stack"><label>菜名<Input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="例如：妈妈的红烧肉" /></label><label>食材<Input value={form.ingredients} onChange={(event) => setForm({ ...form, ingredients: event.target.value })} placeholder="用顿号分隔：五花肉、冰糖、生抽" /></label><label>关键教学<textarea value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} placeholder="火候、顺序、容易失败的地方……" /></label></div><DialogFooter><Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button><Button onClick={saveRecipe}>{editingId ? '保存修改' : '保存到知识库'}</Button></DialogFooter></DialogContent></Dialog>
+  return <main>
+    <header className="site-header"><a className="logo" href="#top"><span><Zap /></span><div><strong>{t.brand}</strong><small>{t.sub}</small></div></a><div className="header-actions"><div className="stove-switch"><button className="active"><Zap />{t.induction}</button><button disabled><Flame />{t.gas}</button></div><button className="guest-button" onClick={()=>{setGuestOpen(true);setSubmitState('idle')}}><MessageSquarePlus />{t.guest}</button><div className="language-switch" aria-label="Language"><Globe2 /><button className={lang==='zh'?'active':''} onClick={()=>setLang('zh')}>中文</button><button className={lang==='en'?'active':''} onClick={()=>setLang('en')}>EN</button></div></div></header>
+
+    <div id="top" className="page-wrap">
+      <section className="pantry"><div className="pantry-head"><span className="step">01</span><div><h1>{t.myIngredients}</h1><p>{t.ingredientHint}</p></div></div><div className="ingredient-controls"><div className="chips">{owned.map((item)=><span key={item}>{item}<button aria-label={`${t.close} ${item}`} onClick={()=>setOwned(owned.filter((ownedItem)=>ownedItem!==item))}><X /></button></span>)}</div><label><Plus /><Input value={ingredient} onChange={(event)=>setIngredient(event.target.value)} onKeyDown={addIngredient} placeholder={t.add} /></label></div></section>
+
+      <section className="recommend"><div className="section-head"><div><span className="step">02</span><h2>{t.recommend}</h2><p>{t.recommendSub}</p></div><a href="#all-recipes">{t.all}<ArrowDown /></a></div><div className="recipe-grid">{sorted.slice(0,4).map((recipe,index)=><RecipeCard key={recipe.id} recipe={recipe} lang={lang} rank={index+1} match={score(recipe)} missing={missingFor(recipe)} onOpen={()=>setSelected(recipe)} />)}</div></section>
+
+      <section className="induction-note"><div className="coil"><span/><span/><span/></div><div><span><Lightbulb />{t.tip}</span><p>{t.tipText}</p></div><strong>500W · 1000W · 1600W</strong></section>
+
+      <section id="all-recipes" className="all-recipes"><div className="section-head"><div><span className="step">03</span><h2>{t.all}</h2><p>{t.allSub}</p></div><label className="search-box"><Search /><Input value={search} onChange={(event)=>setSearch(event.target.value)} placeholder={t.search} /></label></div><div className="recipe-table">{filtered.map((recipe)=><button key={recipe.id} onClick={()=>setSelected(recipe)}><span className="dish-icon"><ChefHat /></span><span><strong>{lang==='zh'?recipe.zh:recipe.en}</strong><small>{recipe.tested&&<em><Check />{t.tested}</em>} {recipeIngredients(recipe).join(' · ')}</small></span><span className="table-meta"><Stars count={recipe.difficulty}/><small>{recipe.minutes} {t.minutes}</small></span><span className="power"><Zap />{recipe.power}</span><ChevronRight /></button>)}</div></section>
+
+      <button className="submission-banner" onClick={()=>{setGuestOpen(true);setSubmitState('idle')}}><MessageSquarePlus /><span><strong>{t.submitTitle}</strong><small>{t.submitDesc}</small></span><ChevronRight /></button>
+    </div>
+
+    <Sheet open={Boolean(selected)} onOpenChange={(open)=>!open&&setSelected(null)}><SheetContent className="recipe-sheet"><SheetHeader><SheetTitle>{selected&&(lang==='zh'?selected.zh:selected.en)}</SheetTitle><SheetDescription>{selected&&(lang==='zh'?selected.descZh:selected.descEn)}</SheetDescription></SheetHeader>{selected&&<div className="sheet-body"><div className="sheet-stats"><span><Stars count={selected.difficulty}/><small>{t.difficulty}</small></span><span><Clock3/><strong>{selected.minutes} {t.minutes}</strong></span><span><Zap/><strong>{selected.power}</strong></span></div><div className="comparison"><h3>{t.have}</h3><div>{recipeIngredients(selected).filter((item)=>!missingFor(selected).includes(item)).map((item)=><span className="have" key={item}><Check />{item}</span>)}</div><h3>{t.need}</h3><div>{missingFor(selected).length?missingFor(selected).map((item)=><span className="need" key={item}><Plus />{item}</span>):<span className="ready"><Check />{t.can}</span>}</div></div><div className="power-track"><div><span>500W</span><span>1000W</span><span>1600W</span></div><i/></div><div className="steps"><h3><Utensils />{t.steps}</h3>{(lang==='zh'?selected.stepsZh:selected.stepsEn).map((step,index)=><div key={step}><span>{index+1}</span><p>{step}</p></div>)}</div></div>}</SheetContent></Sheet>
+
+    <Dialog open={guestOpen} onOpenChange={setGuestOpen}><DialogContent className="guest-dialog"><DialogHeader><DialogTitle>{t.submitTitle}</DialogTitle><DialogDescription>{t.submitDesc}</DialogDescription></DialogHeader>{submitState==='success'?<div className="submit-success"><Check/><p>{t.success}</p><Button onClick={()=>setGuestOpen(false)}>{t.close}</Button></div>:<form onSubmit={submitGuest}><label>{t.name}<Input required maxLength={60} value={guest.name} onChange={(e)=>setGuest({...guest,name:e.target.value})}/></label><label>{t.dish}<Input required maxLength={100} value={guest.dishName} onChange={(e)=>setGuest({...guest,dishName:e.target.value})}/></label><label>{t.content}<textarea required maxLength={2500} value={guest.content} onChange={(e)=>setGuest({...guest,content:e.target.value})}/></label>{submitState==='error'&&<p className="form-error">{t.error}</p>}<DialogFooter><Button type="button" variant="outline" onClick={()=>setGuestOpen(false)}>{t.close}</Button><Button type="submit" disabled={submitState==='sending'}>{submitState==='sending'?t.sending:t.send}<Send/></Button></DialogFooter></form>}</DialogContent></Dialog>
   </main>;
 }
+
+function Stars({count}:{count:number}) { return <span className="stars" aria-label={`${count}/3`}>{[1,2,3].map((star)=><Star key={star} className={star<=count?'filled':''}/>)}</span> }
+function RecipeCard({recipe,lang,rank,match,missing,onOpen}:{recipe:Recipe;lang:Lang;rank:number;match:number;missing:string[];onOpen:()=>void}) { const t=copy[lang]; return <button className={`recipe-card rank-${rank}`} onClick={onOpen}><div className="card-top"><span className="rank">0{rank}</span>{recipe.tested&&<em><Check />{t.tested}</em>}</div><div className="card-icon"><ChefHat /></div><h3>{lang==='zh'?recipe.zh:recipe.en}</h3><p>{lang==='zh'?recipe.descZh:recipe.descEn}</p><div className="match-bar"><i style={{width:`${Math.round(match/(match+missing.length||1)*100)}%`}}/></div><div className="match-line"><strong className={missing.length?'missing':'ready'}>{missing.length?`${t.missing} ${missing.length} ${t.item}`:t.can}</strong><span>{missing.length?missing.join(' · '):<><Check />100%</>}</span></div><footer><Stars count={recipe.difficulty}/><span><Clock3 />{recipe.minutes} {t.minutes}</span><span><Zap />{recipe.power}</span></footer><div className="open-label">{t.open}<ChevronRight /></div></button> }
