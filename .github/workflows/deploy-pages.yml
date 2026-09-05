@@ -49,6 +49,7 @@ jobs:
           cp dist/client/index.html dist/pages/404.html
           cp dist/client/favicon.svg dist/pages/favicon.svg
           cp dist/client/kitchen-workspace.png dist/pages/kitchen-workspace.png
+          cp -R dist/client/recipes dist/pages/recipes
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

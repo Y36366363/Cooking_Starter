@@ -2,15 +2,16 @@
 
 [English](#english) · [公开网页 / Live site](https://y36366363.github.io/Cooking_Starter/)
 
-食知是一个以电磁炉烹饪为核心的双语菜谱 Agent 原型，主要面向留学生和刚开始做中餐的海外用户。它把模糊的“大火、中火、小火”转换成更容易重复的功率与时间提示，并根据用户现有食材判断一道菜是否可以马上制作。
+食知是一个以电磁炉烹饪为核心的双语菜谱 Agent 原型，主要面向留学生和刚开始做中餐的海外用户。它把模糊的“大火、中火、小火”转换成直观的 1–9 档操作，并根据用户现有食材判断一道菜是否可以马上制作。
 
 ## 当前功能
 
 - 中文 / English 明显切换
 - 按已有食材推荐菜谱，并显示缺少的食材
-- 菜名与中英文食材搜索
-- 菜谱难度、时间和电磁炉功率路线
-- 菜谱详情中的已有 / 缺少食材对比
+- 可折叠的中英双语食材库、受控联想输入和菜名 / 食材搜索
+- 菜谱难度、时间和电磁炉 1–9 档火力路线
+- 菜谱详情中的最低食材对比、可选加料与必需 / 推荐佐料
+- 12 道带成品图片的入门菜谱及更具体的分步指导
 - 优先展示作者亲自成功试做的家常菜
 - 适配桌面和手机屏幕
 - 访客菜谱投稿界面；服务器版本写入待审核数据库
@@ -56,15 +57,17 @@ pnpm build
 
 ## English
 
-Shizhi is a bilingual cooking-agent prototype focused on induction hobs. It is designed for international students and people learning to cook Chinese food abroad. Instead of vague heat labels, recipes use practical wattage and timing guidance, then compare each dish with the ingredients already available.
+Shizhi is a bilingual cooking-agent prototype focused on induction hobs. It is designed for international students and people learning to cook Chinese food abroad. Instead of vague heat labels, recipes use practical 1–9 induction levels and timing guidance, then compare each dish with the ingredients already available.
 
 ### Available now
 
 - Prominent Chinese / English switch
 - Pantry-based recipe ranking and missing-ingredient comparison
+- Collapsible bilingual pantry with 60+ validated ingredients and autocomplete
 - Search by dish or ingredient in either language
-- Difficulty, cooking time, and induction power guidance
-- Detailed step-by-step recipe sheets
+- Difficulty, cooking time, and practical 1–9 induction guidance
+- Required ingredients, optional add-ins, required/recommended seasonings, and detailed steps
+- 12 illustrated beginner recipes
 - Kitchen-tested recipes shown first
 - Responsive desktop and mobile layout
 
