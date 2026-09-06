@@ -1,0 +1,8 @@
+# Copy this file to .dev.vars for local Cloudflare/Vinext development.
+# Do not commit .dev.vars or .env files.
+COOKING_AGENT_ACCESS_CODE=replace-with-a-visitor-code
+COOKING_AGENT_ADMIN_CODE=replace-with-a-long-private-admin-code
+COOKING_AGENT_PROVIDER=deepseek
+DEEPSEEK_MODEL=deepseek-v4-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
+OPENAI_MODEL=gpt-4o-mini

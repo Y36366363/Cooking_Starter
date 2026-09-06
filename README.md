@@ -24,13 +24,18 @@
 公开 GitHub Pages 版本包含完整的 Agent 对话界面和演示模式，但不会在浏览器中放置 LLM API Key。要启用真实模型调用，请在服务器部署环境中配置：
 
 ```text
-OPENAI_API_KEY=你的服务端密钥
-OPENAI_MODEL=gpt-4o-mini                 # 可选
+DEEPSEEK_API_KEY=你的服务端密钥
+DEEPSEEK_MODEL=deepseek-v4-flash          # 默认，快速且适合菜谱对话
+GEMINI_API_KEY=你的服务端密钥             # 可选备用提供商
+GEMINI_MODEL=gemini-3.5-flash-lite        # 当前可用的低延迟 Gemini 模型
+OPENAI_API_KEY=你的服务端密钥             # 可选备用提供商
+OPENAI_MODEL=gpt-4o-mini
+COOKING_AGENT_PROVIDER=deepseek           # deepseek | gemini | openai
 COOKING_AGENT_ACCESS_CODE=普通访问密码     # 每个进程窗口每小时 5 次
 COOKING_AGENT_ADMIN_CODE=管理员密码         # 不受次数限制
 ```
 
-真实调用通过 `/api/agent` 完成。访问密码只用于服务器鉴权，不会发送给模型；普通密码的简单限流为每小时 5 次，管理员密码不受该限制。正式多实例部署时，建议把限流计数迁移到 D1 或 KV，以便所有实例共享额度。GitHub Pages 上没有服务器运行时，因此对话区会明确标识为演示模式，不会产生外部模型费用。
+真实调用通过 `/api/agent` 完成。模型密钥只由服务器读取，绝不会发送到浏览器、返回给前端或写入静态 GitHub Pages 构建产物。访问密码只用于服务器鉴权，不会发送给模型；普通密码的简单限流为每小时 5 次，管理员密码不受该限制。正式多实例部署时，建议把限流计数迁移到 D1 或 KV，以便所有实例共享额度。GitHub Pages 上没有服务器运行时，因此对话区会明确标识为演示模式，不会产生外部模型费用。
 
 ## 公开预览
 
@@ -88,7 +93,7 @@ Shizhi is a bilingual cooking-agent prototype focused on induction hobs. It is d
 
 The public GitHub Pages build is static. Core recipe features work normally, while guest submissions remain disabled until a secure public backend is connected. The server build already includes a review-queue API backed by D1.
 
-The public build never contains an LLM key. A server deployment can enable `/api/agent` with `OPENAI_API_KEY`, `COOKING_AGENT_ACCESS_CODE` (5 requests/hour), and `COOKING_AGENT_ADMIN_CODE` (unlimited). The access code is checked server-side and is never sent to the model.
+The public build never contains an LLM key. A server deployment can enable `/api/agent` with `DEEPSEEK_API_KEY` (default), `GEMINI_API_KEY` or `OPENAI_API_KEY`, plus `COOKING_AGENT_ACCESS_CODE` (5 requests/hour) and `COOKING_AGENT_ADMIN_CODE` (unlimited). Provider choice and model names are server-only settings; the access code is checked server-side and is never sent to the model.
 
 ### Development
 
