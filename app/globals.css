@@ -1130,6 +1130,99 @@ button {
   font-size: 10px;
   line-height: 1.5;
 }
+.agent-plan {
+  margin-top: 13px;
+  padding: 14px;
+  background: #252824;
+  border: 1px solid #41453e;
+  border-radius: 10px;
+}
+.agent-plan-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+.agent-plan-head h3 {
+  margin: 0;
+  color: #f7f5ef;
+  font-size: 14px;
+}
+.agent-plan-head p {
+  max-width: 540px;
+  margin: 4px 0 0;
+  color: #aeb1a8;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.agent-plan-head > span {
+  color: #f5c2b7;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.agent-plan-pantry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  margin: 11px 0;
+  color: #aeb1a8;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.agent-plan-pantry span {
+  padding: 4px 7px;
+  color: #e8ebe1;
+  background: #353a33;
+  border-radius: 999px;
+}
+.agent-plan-fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(110px, 0.65fr) 84px;
+  gap: 9px;
+}
+.agent-plan-fields label {
+  display: grid;
+  gap: 5px;
+  color: #d9ddd3;
+  font-size: 10px;
+  font-weight: 800;
+}
+.agent-plan-fields input,
+.agent-plan-fields select {
+  height: 36px;
+  color: #f5f3ee;
+  background: #191b18;
+  border: 1px solid #4a4d45;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.agent-plan-fields select {
+  padding: 0 8px;
+}
+.agent-plan-preference {
+  grid-column: 1 / -1;
+}
+.agent-plan-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 11px;
+}
+.agent-plan-action button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: #e04427;
+}
+.agent-plan-action button svg {
+  width: 15px;
+}
+.agent-plan-action small {
+  color: #f5c2b7;
+  font-size: 10px;
+}
 .agent-thread {
   display: grid;
   gap: 10px;
@@ -1218,6 +1311,20 @@ button {
   }
   .agent-access {
     grid-template-columns: 1fr;
+  }
+  .agent-plan-head,
+  .agent-plan-action {
+    display: grid;
+  }
+  .agent-plan-head > span {
+    white-space: normal;
+  }
+  .agent-plan-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .agent-plan-fields > label:first-child,
+  .agent-plan-preference {
+    grid-column: 1 / -1;
   }
   .agent-form {
     grid-template-columns: 1fr;

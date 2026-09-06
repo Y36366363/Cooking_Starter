@@ -12,7 +12,7 @@
 - 菜谱难度、时间和电磁炉 1–9 档火力路线
 - 菜谱详情中的最低食材对比、可选加料与必需 / 推荐佐料
 - 12 道带成品图片的入门菜谱及更具体的分步指导
-- 受控访问的 AI 厨神 Agent 对话区，可根据食材、口味、时间和设备条件给出建议
+- 受控访问的 AI 厨神 Agent 对话区；可设定目标菜、已选食材与佐料、人数、预计时间和限制条件，生成可做程度、缺少项与分步执行计划
 - 优先展示作者亲自成功试做的家常菜
 - 适配桌面和手机屏幕
 - 访客菜谱投稿界面；服务器版本写入待审核数据库
@@ -87,7 +87,7 @@ Shizhi is a bilingual cooking-agent prototype focused on induction hobs. It is d
 - Difficulty, cooking time, and practical 1–9 induction guidance
 - Required ingredients, optional add-ins, required/recommended seasonings, and detailed steps
 - 12 illustrated beginner recipes
-- Protected AI cooking-agent conversation with pantry-aware recommendations
+- Protected AI cooking planner: set a target dish, selected pantry and seasonings, servings, time, and constraints to receive feasibility, missing-item, and step-by-step execution reports
 - Kitchen-tested recipes shown first
 - Responsive desktop and mobile layout
 

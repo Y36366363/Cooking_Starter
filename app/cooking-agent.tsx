@@ -45,7 +45,7 @@ import {
 } from '@/components/ui/sheet';
 
 type Lang = 'zh' | 'en';
-type Category = 'vegetable' | 'protein' | 'staple' | 'other';
+type Category = 'vegetable' | 'protein' | 'staple' | 'seasoning' | 'other';
 type PantryItem = {
   id: string;
   zh: string;
@@ -155,6 +155,18 @@ const pantryItems: PantryItem[] = [
   ['rice-noodle', '米粉', 'Rice noodles', 'staple'],
   ['dumpling', '饺子', 'Dumplings', 'staple'],
   ['flour', '面粉', 'Flour', 'staple'],
+  ['oil', '食用油', 'Cooking oil', 'seasoning', ['油']],
+  ['salt', '盐', 'Salt', 'seasoning'],
+  ['sugar', '糖', 'Sugar', 'seasoning'],
+  ['light-soy', '生抽', 'Light soy sauce', 'seasoning', ['酱油']],
+  ['dark-soy', '老抽', 'Dark soy sauce', 'seasoning'],
+  ['oyster-sauce', '蚝油', 'Oyster sauce', 'seasoning'],
+  ['vinegar', '米醋', 'Rice vinegar', 'seasoning', ['醋']],
+  ['ketchup', '番茄酱', 'Ketchup', 'seasoning'],
+  ['starch', '淀粉', 'Cornstarch', 'seasoning'],
+  ['cooking-wine', '料酒', 'Cooking wine', 'seasoning'],
+  ['white-pepper', '白胡椒', 'White pepper', 'seasoning', ['胡椒']],
+  ['chili-oil', '辣椒油', 'Chili oil', 'seasoning'],
   ['milk', '牛奶', 'Milk', 'other'],
   ['seaweed', '紫菜', 'Dried seaweed', 'other'],
   ['pickle', '榨菜', 'Pickled mustard', 'other'],
@@ -822,6 +834,7 @@ const copy = {
       vegetable: '蔬菜菌菇',
       protein: '蛋白质',
       staple: '主食',
+      seasoning: '佐料调味',
       other: '其他',
     },
     recommend: '你现在最适合做',
@@ -862,6 +875,17 @@ const copy = {
     error: '提交失败，请稍后重试。',
     close: '关闭',
     serving: '默认 1 人份',
+    planTitle: '生成一份烹饪计划',
+    planSub: '先设定目标、时间和人数，Agent 会结合你已选食材给出可做程度与执行安排。',
+    planDish: '准备做什么菜？',
+    planDishHint: '例如：西红柿炒鸡蛋，或“用现有食材推荐”',
+    planTime: '预计可用时间（分钟）',
+    planServings: '人数',
+    planPreference: '口味 / 限制（可选）',
+    planPreferenceHint: '例如：少油、不辣、不要额外购买',
+    planPantry: '本次计划使用的已选食材',
+    generatePlan: '生成建议与计划',
+    planNeedsCode: '先输入访问密码，再生成真实 AI 计划。',
   },
   en: {
     brand: 'SHIZHI',
@@ -881,6 +905,7 @@ const copy = {
       vegetable: 'Vegetables & mushrooms',
       protein: 'Protein',
       staple: 'Staples',
+      seasoning: 'Seasonings',
       other: 'Other',
     },
     recommend: 'Best matches right now',
@@ -921,6 +946,17 @@ const copy = {
     error: 'Could not submit. Try again later.',
     close: 'Close',
     serving: 'Default: 1 serving',
+    planTitle: 'Build a cooking plan',
+    planSub: 'Set a dish, time, and servings; the agent will assess your selected pantry and create an action plan.',
+    planDish: 'What would you like to cook?',
+    planDishHint: 'Example: tomato and egg, or “recommend from my pantry”',
+    planTime: 'Time available (minutes)',
+    planServings: 'Servings',
+    planPreference: 'Taste / constraints (optional)',
+    planPreferenceHint: 'Example: low oil, mild, no extra shopping',
+    planPantry: 'Selected ingredients for this plan',
+    generatePlan: 'Generate report & plan',
+    planNeedsCode: 'Enter an access code first to generate a live AI plan.',
   },
 };
 const byId = (id: string) => pantryItems.find((x) => x.id === id)!;
@@ -944,6 +980,12 @@ export default function Home() {
   const [agentOpen, setAgentOpen] = useState(true),
     [agentCode, setAgentCode] = useState(''),
     [agentMessage, setAgentMessage] = useState(''),
+    [plan, setPlan] = useState({
+      dish: '',
+      minutes: '20',
+      servings: '1',
+      preference: '',
+    }),
     [agentMessages, setAgentMessages] = useState<
       { role: 'user' | 'assistant'; text: string }[]
     >([]),
@@ -1021,11 +1063,8 @@ export default function Home() {
       setSubmitState('error');
     }
   }
-  async function askAgent(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const message = agentMessage.trim();
+  async function sendToAgent(message: string) {
     if (!message || !agentCode.trim() || agentBusy) return;
-    setAgentMessage('');
     setAgentError('');
     setAgentMessages((current) => [
       ...current,
@@ -1083,6 +1122,23 @@ export default function Home() {
     } finally {
       setAgentBusy(false);
     }
+  }
+  async function askAgent(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const message = agentMessage.trim();
+    if (!message) return;
+    setAgentMessage('');
+    await sendToAgent(message);
+  }
+  async function generatePlan() {
+    const dish = plan.dish.trim();
+    if (!dish || !agentCode.trim() || agentBusy) return;
+    const pantry = owned.map((id) => itemName(id, lang)).join('、');
+    const message =
+      lang === 'zh'
+        ? `请生成一份可执行的烹饪推荐报告。\n目标菜品：${dish}\n人数：${plan.servings} 人\n可用时间：${plan.minutes || '未设定'} 分钟\n口味/限制：${plan.preference.trim() || '无'}\n本次已选食材和佐料：${pantry || '未选择'}\n请严格按“可做程度、缺少/可选补充、按时间排列的步骤、电磁炉档位、食品安全、营养建议”输出；若目标菜不合适，也给出最接近的替代方案。`
+        : `Create an actionable cooking recommendation report.\nTarget dish: ${dish}\nServings: ${plan.servings}\nTime available: ${plan.minutes || 'not set'} minutes\nTaste / constraints: ${plan.preference.trim() || 'none'}\nSelected ingredients and seasonings: ${pantry || 'none selected'}\nUse the sections Feasibility, Missing / optional extras, time-ordered Steps, Induction levels, Food safety, and Nutrition. If the target is unsuitable, give the closest alternative.`;
+    await sendToAgent(message);
   }
   useEffect(() => {
     const c = document.modelContext;
@@ -1236,7 +1292,9 @@ export default function Home() {
           </button>
           {libraryOpen && (
             <div className="ingredient-library">
-              {(['vegetable', 'protein', 'staple', 'other'] as Category[]).map(
+              {(
+                ['vegetable', 'protein', 'staple', 'seasoning', 'other'] as Category[]
+              ).map(
                 (cat) => (
                   <div key={cat}>
                     <h2>{t.categories[cat]}</h2>
@@ -1328,6 +1386,100 @@ export default function Home() {
                     : 'Standard codes allow 5 requests/hour; admin codes are unlimited. The code is sent only to the protected server, never to the model.'}
                 </small>
               </div>
+              <section className="agent-plan" aria-label={t.planTitle}>
+                <div className="agent-plan-head">
+                  <div>
+                    <h3>{t.planTitle}</h3>
+                    <p>{t.planSub}</p>
+                  </div>
+                  <span>{t.planPantry}</span>
+                </div>
+                <div className="agent-plan-pantry">
+                  {owned.length
+                    ? owned.map((id) => (
+                        <span key={id}>{itemName(id, lang)}</span>
+                      ))
+                    : lang === 'zh'
+                      ? '请先从“我现在有”中选择食材和佐料'
+                      : 'Select ingredients and seasonings above first'}
+                </div>
+                <div className="agent-plan-fields">
+                  <label>
+                    {t.planDish}
+                    <Input
+                      value={plan.dish}
+                      onChange={(e) =>
+                        setPlan((current) => ({
+                          ...current,
+                          dish: e.target.value,
+                        }))
+                      }
+                      placeholder={t.planDishHint}
+                    />
+                  </label>
+                  <label>
+                    {t.planTime}
+                    <Input
+                      type="number"
+                      min="5"
+                      max="240"
+                      value={plan.minutes}
+                      onChange={(e) =>
+                        setPlan((current) => ({
+                          ...current,
+                          minutes: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    {t.planServings}
+                    <select
+                      value={plan.servings}
+                      onChange={(e) =>
+                        setPlan((current) => ({
+                          ...current,
+                          servings: e.target.value,
+                        }))
+                      }
+                    >
+                      {[1, 2, 3, 4].map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="agent-plan-preference">
+                    {t.planPreference}
+                    <Input
+                      value={plan.preference}
+                      onChange={(e) =>
+                        setPlan((current) => ({
+                          ...current,
+                          preference: e.target.value,
+                        }))
+                      }
+                      placeholder={t.planPreferenceHint}
+                    />
+                  </label>
+                </div>
+                <div className="agent-plan-action">
+                  <Button
+                    type="button"
+                    onClick={generatePlan}
+                    disabled={!agentCode.trim() || !plan.dish.trim() || agentBusy}
+                  >
+                    <ChefHat />
+                    {agentBusy
+                      ? lang === 'zh'
+                        ? '正在规划…'
+                        : 'Planning…'
+                      : t.generatePlan}
+                  </Button>
+                  {!agentCode.trim() && <small>{t.planNeedsCode}</small>}
+                </div>
+              </section>
               {agentMessages.length > 0 && (
                 <div className="agent-thread">
                   {agentMessages.map((item, index) => (
