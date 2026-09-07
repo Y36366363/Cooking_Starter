@@ -13,6 +13,7 @@
 - 菜谱详情中的最低食材对比、可选加料与必需 / 推荐佐料
 - 12 道带成品图片的入门菜谱及更具体的分步指导
 - 受控访问的 AI 厨神 Agent 对话区；可设定目标菜、已选食材与佐料、人数、预计时间和限制条件，生成可做程度、缺少项与分步执行计划
+- 工具型 Agent：服务器先从菜谱目录检索候选菜、核对必需食材与佐料、判断时间可行性，再把可信报告交给模型生成建议；缺料和时间不足不会由模型自行猜测
 - 优先展示作者亲自成功试做的家常菜
 - 适配桌面和手机屏幕
 - 访客菜谱投稿界面；服务器版本写入待审核数据库
@@ -36,6 +37,8 @@ COOKING_AGENT_ADMIN_CODE=管理员密码         # 不受次数限制
 ```
 
 真实调用通过 `/api/agent` 完成。模型密钥只由服务器读取，绝不会发送到浏览器、返回给前端或写入静态 GitHub Pages 构建产物。访问密码只用于服务器鉴权，不会发送给模型；普通密码的简单限流为每小时 5 次，管理员密码不受该限制。正式多实例部署时，建议把限流计数迁移到 D1 或 KV，以便所有实例共享额度。GitHub Pages 上没有服务器运行时，因此对话区会明确标识为演示模式，不会产生外部模型费用。
+
+Agent 在生成回答前会运行服务器端菜谱工具：根据目标菜、选中的食材/佐料、人数和可用时间，确定候选菜、必需项、缺少项、标准时间、电磁炉火力路线与安全基线。模型只能把工具找到且材料齐全的 `readyAlternatives` 写成完整替代做法；否则它只能报告最低缺少项，不能编造水、调料或其他设备。
 
 ## 公开预览
 
@@ -88,6 +91,7 @@ Shizhi is a bilingual cooking-agent prototype focused on induction hobs. It is d
 - Required ingredients, optional add-ins, required/recommended seasonings, and detailed steps
 - 12 illustrated beginner recipes
 - Protected AI cooking planner: set a target dish, selected pantry and seasonings, servings, time, and constraints to receive feasibility, missing-item, and step-by-step execution reports
+- Tool-based agent flow: the server retrieves a recipe candidate, checks required pantry items/seasonings and available time, then gives the LLM a trusted report instead of letting it guess missing items or appliances
 - Kitchen-tested recipes shown first
 - Responsive desktop and mobile layout
 
