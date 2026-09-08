@@ -1,12 +1,15 @@
 {
-  "input_language": "zh",
-  "report_language": "zh",
-  "provider": "deepseek",
+  "language": "zh",
+  "model_provider": "deepseek",
   "model": "deepseek-v4-flash",
   "target_dish": "西红柿炒鸡蛋",
   "ingredients": ["西红柿", "鸡蛋"],
   "seasonings": ["食用油", "盐", "糖", "番茄酱"],
   "time_minutes": 20,
   "servings": 1,
-  "preference": "少油；不要额外购买；使用电磁炉"
+  "preference": "少油；不要额外购买",
+  "skill_level": "beginner",
+  "equipment": ["induction_hob", "frying_pan"],
+  "max_induction_level": 9,
+  "allow_extra_purchase": false
 }

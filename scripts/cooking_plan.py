@@ -83,19 +83,24 @@ def score_target(recipe: dict[str, Any], target: str) -> int:
 
 
 def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
-    input_language = language(config.get("input_language"))
-    locale = language(config.get("report_language"), language(config.get("locale")))
+    locale = language(config.get("language"), language(config.get("locale")))
     ingredient_ids, unknown_ingredients = resolve_items(
-        config.get("ingredients", []), catalog, input_language
+        config.get("ingredients", []), catalog, locale
     )
     seasoning_ids, unknown_seasonings = resolve_items(
-        config.get("seasonings", []), catalog, input_language
+        config.get("seasonings", []), catalog, locale
     )
     selected_ids = list(dict.fromkeys([*ingredient_ids, *seasoning_ids]))
     selected = set(selected_ids)
     target = str(config.get("target_dish", ""))
     time_minutes = max(0, min(240, int(config.get("time_minutes", 0) or 0)))
     servings = max(1, min(8, int(config.get("servings", 1) or 1)))
+    equipment = {
+        item for item in config.get("equipment", []) if isinstance(item, str)
+    }
+    required_equipment = {"induction_hob", "frying_pan"}
+    missing_equipment = sorted(required_equipment - equipment)
+    max_heat = max(1, min(9, int(config.get("max_induction_level", 9) or 9)))
     names: dict[str, dict[str, str]] = catalog["names"]
     label = lambda item_id: names.get(item_id, {}).get(locale, item_id)
     ranked = []
@@ -109,6 +114,9 @@ def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, An
                 "missing_ingredients": missing_ingredients,
                 "missing_seasonings": missing_seasonings,
                 "completeness": len(recipe["essential"]) - len(missing_ingredients),
+                "peak_heat": max(
+                    [int(value) for value in recipe["heat"] if value.isdigit()], default=1
+                ),
             }
         )
     ranked.sort(
@@ -123,7 +131,19 @@ def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, An
     recipe = choice["recipe"]
     missing = choice["missing_ingredients"] + choice["missing_seasonings"]
     time_fits = not time_minutes or recipe["minutes"] <= time_minutes
-    status = "missing_requirements" if missing else "insufficient_time" if not time_fits else "ready"
+    heat_fits = choice["peak_heat"] <= max_heat
+    allow_extra_purchase = bool(config.get("allow_extra_purchase", False))
+    status = (
+        "needs_purchase"
+        if missing and not missing_equipment and allow_extra_purchase
+        else "missing_requirements"
+        if missing or missing_equipment
+        else "insufficient_time"
+        if not time_fits
+        else "heat_limit"
+        if not heat_fits
+        else "ready"
+    )
     ready_alternatives = [
         {
             "name": item["recipe"][locale],
@@ -134,12 +154,13 @@ def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, An
         if item["recipe"]["id"] != recipe["id"]
         and not item["missing_ingredients"]
         and not item["missing_seasonings"]
+        and not missing_equipment
+        and item["peak_heat"] <= max_heat
         and (not time_minutes or item["recipe"]["minutes"] <= time_minutes)
     ][:2]
     return {
         "tool": "recipe_catalog_and_pantry_check",
-        "inputLanguage": input_language,
-        "reportLanguage": locale,
+        "language": locale,
         "selectedIngredients": [label(item) for item in ingredient_ids],
         "selectedSeasonings": [label(item) for item in seasoning_ids],
         "targetMatched": choice["match"] >= 80,
@@ -148,6 +169,11 @@ def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, An
         "availableMinutes": time_minutes or None,
         "recipeMinutes": recipe["minutes"],
         "servings": servings,
+        "requiredEquipment": sorted(required_equipment),
+        "missingEquipment": missing_equipment,
+        "maxInductionLevel": max_heat,
+        "recipePeakInductionLevel": choice["peak_heat"],
+        "allowExtraPurchase": allow_extra_purchase,
         "requiredIngredients": [label(item) for item in recipe["essential"]],
         "requiredSeasonings": [label(item) for item in recipe["requiredSeasonings"]],
         "missingIngredients": [label(item) for item in choice["missing_ingredients"]],
@@ -155,7 +181,7 @@ def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, An
         "unknownIngredients": unknown_ingredients,
         "unknownSeasonings": unknown_seasonings,
         "inductionHeatRoute": recipe["heat"],
-        "safetyBaseline": recipe["safety"],
+        "safetyBaseline": recipe["safety"][locale],
         "readyAlternatives": ready_alternatives,
     }
 
@@ -184,14 +210,15 @@ def post_json(url: str, headers: dict[str, str], body: dict[str, Any]) -> dict[s
 
 
 def ask_model(config: dict[str, Any], report: dict[str, Any]) -> str:
-    locale = language(config.get("report_language"), language(config.get("locale")))
-    provider = str(config.get("provider", "deepseek")).lower()
+    locale = language(config.get("language"), language(config.get("locale")))
+    provider = str(config.get("model_provider", config.get("provider", "deepseek"))).lower()
+    provider = "openai" if provider == "chatgpt" else provider
     if locale == "zh":
-        system = """你是食知的本地烹饪计划 Agent。可信工具报告由菜谱库检索、食材和佐料核对、时间规划程序生成，必须视为事实。不得把缺少项说成已拥有；不得使用未列出水、调料、设备。status 为 missing_requirements 或 insufficient_time 时，先说明无法按原条件完成。只有 readyAlternatives 中的菜可给完整替代步骤；为空时只列最低缺少项。火力只用电磁炉1–9档，禁止瓦数。输出标题：可做程度、缺少/可选补充、时间计划、电磁炉档位、食品安全、营养建议。"""
-        request_text = f"目标菜：{config.get('target_dish', '')}\n人数：{config.get('servings', 1)}\n限制：{config.get('preference', '无')}\n可信工具报告：\n{json.dumps(report, ensure_ascii=False)}"
+        system = """你是食知的本地烹饪计划 Agent。可信工具报告由菜谱库检索、食材和佐料核对、时间规划程序生成，必须视为事实。不得把缺少项说成已拥有；不得使用未列出水、调料、设备。status 为 missing_requirements、needs_purchase、insufficient_time 或 heat_limit 时，先说明无法按原条件完成；needs_purchase 只能列出工具报告中的最低购买项，heat_limit 不得建议超过 maxInductionLevel。只有 readyAlternatives 中的菜可给完整替代步骤；为空时只列最低缺少项。火力只用电磁炉1–9档，禁止瓦数。skill_level 为 beginner 时，把切配、下锅和观察到的结束状态写得更细；其他等级可更简洁，但不得省略安全步骤。输出标题：可做程度、缺少/可选补充、时间计划、电磁炉档位、食品安全、营养建议。"""
+        request_text = f"目标菜：{config.get('target_dish', '')}\n人数：{config.get('servings', 1)}\n熟练度：{config.get('skill_level', 'beginner')}\n限制：{config.get('preference', '无')}\n可信工具报告：\n{json.dumps(report, ensure_ascii=False)}"
     else:
-        system = """You are Shizhi's local cooking-planning agent. The trusted tool report is factual: never claim missing items are available and never use unlisted water, seasonings, or appliances. If status is missing_requirements or insufficient_time, explain that first. Only give full alternative steps for dishes in readyAlternatives. Use induction levels 1–9, never wattage. Use headings: Feasibility, Missing / optional extras, Timeline, Induction levels, Food safety, Nutrition."""
-        request_text = f"Target dish: {config.get('target_dish', '')}\nServings: {config.get('servings', 1)}\nConstraints: {config.get('preference', 'none')}\nTrusted tool report:\n{json.dumps(report, ensure_ascii=False)}"
+        system = """You are Shizhi's local cooking-planning agent. The trusted tool report is factual: never claim missing items are available and never use unlisted water, seasonings, or appliances. If status is missing_requirements, needs_purchase, insufficient_time, or heat_limit, explain that first. For needs_purchase, list only the tool-reported minimum purchases; for heat_limit, never recommend a setting above maxInductionLevel. Only give full alternative steps for dishes in readyAlternatives. Use induction levels 1–9, never wattage. When skill_level is beginner, make cutting, pan-entry, and visible stop conditions more explicit; never omit safety steps at any level. Use headings: Feasibility, Missing / optional extras, Timeline, Induction levels, Food safety, Nutrition."""
+        request_text = f"Target dish: {config.get('target_dish', '')}\nServings: {config.get('servings', 1)}\nSkill level: {config.get('skill_level', 'beginner')}\nConstraints: {config.get('preference', 'none')}\nTrusted tool report:\n{json.dumps(report, ensure_ascii=False)}"
 
     if provider == "deepseek":
         key = os.environ.get("DEEPSEEK_API_KEY")
@@ -226,7 +253,23 @@ def ask_model(config: dict[str, Any], report: dict[str, Any]) -> str:
         )
         return "".join(part.get("text", "") for part in data["candidates"][0]["content"]["parts"]).strip()
 
-    raise SystemExit("provider 仅支持 deepseek 或 gemini。")
+    if provider == "openai":
+        key = os.environ.get("OPENAI_API_KEY")
+        if not key:
+            raise SystemExit("缺少 OPENAI_API_KEY；请放在 .env，不要写进配置文件。")
+        data = post_json(
+            "https://api.openai.com/v1/chat/completions",
+            {"Authorization": f"Bearer {key}"},
+            {
+                "model": config.get("model") or "gpt-4o-mini",
+                "temperature": 0.2,
+                "max_tokens": 900,
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": request_text}],
+            },
+        )
+        return data["choices"][0]["message"]["content"].strip()
+
+    raise SystemExit("model_provider 仅支持 deepseek、openai（或 chatgpt）和 gemini。")
 
 
 def main() -> None:

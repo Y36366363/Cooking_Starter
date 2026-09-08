@@ -76,7 +76,7 @@ export function retrieveCookingPlan(
     missingIngredients: choice.missingIngredients.map((id) => label(id, locale)),
     missingSeasonings: choice.missingSeasonings.map((id) => label(id, locale)),
     inductionHeatRoute: choice.recipe.heat,
-    safetyBaseline: choice.recipe.safety,
+    safetyBaseline: choice.recipe.safety[locale],
     alternatives: ranked.slice(1, 3).map((item) => ({
       name: item.recipe[locale],
       minutes: item.recipe.minutes,

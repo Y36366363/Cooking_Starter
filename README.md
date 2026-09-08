@@ -31,7 +31,7 @@ GEMINI_API_KEY=你的服务端密钥             # 可选备用提供商
 GEMINI_MODEL=gemini-3.5-flash-lite        # 当前可用的低延迟 Gemini 模型
 OPENAI_API_KEY=你的服务端密钥             # 可选备用提供商
 OPENAI_MODEL=gpt-4o-mini
-COOKING_AGENT_PROVIDER=deepseek           # deepseek | gemini | openai
+COOKING_AGENT_PROVIDER=deepseek           # deepseek | gemini | chatgpt（或 openai）
 COOKING_AGENT_ACCESS_CODE=普通访问密码     # 每个进程窗口每小时 5 次
 COOKING_AGENT_ADMIN_CODE=管理员密码         # 不受次数限制
 ```
@@ -42,7 +42,7 @@ Agent 在生成回答前会运行服务器端菜谱工具：根据目标菜、�
 
 ### 本地一键生成烹饪报告
 
-不想每次打开网页填写时，可以直接编辑 [config/default_config.json](config/default_config.json) 中的变量：`ingredients`（主食材）和 `seasonings`（佐料）分开填写；`target_dish`、`time_minutes`、`servings`、`preference` 用于计划条件。`input_language` 控制配置里食材名称使用中文（`zh`）还是英文（`en`），`report_language` 独立控制报告输出语言。API Key 仍只放在被 Git 忽略的 `.env`，不要写入配置文件。
+不想每次打开网页填写时，可以直接编辑 [config/default_config.json](config/default_config.json)。`ingredients`（主食材）和 `seasonings`（佐料）分开填写；`target_dish`、`time_minutes`、`servings`、`preference` 用于计划条件。只保留一个 `language`：设为 `zh` 时按中文识别并输出中文报告，设为 `en` 时按英文识别并输出英文报告。`model_provider` 可选 `deepseek`、`chatgpt`（或 `openai`）和 `gemini`，`model` 填对应模型名。`skill_level` 会影响说明的细致程度；`equipment`、`max_induction_level` 和 `allow_extra_purchase` 会进入确定性预检，分别检查必需厨具、最高可用档位和缺料时是否允许先给出最小采购清单。API Key 仍只放在被 Git 忽略的 `.env`，不要写入配置文件。
 
 ```bash
 # 先做免费预检：找菜谱、核对缺料和时间，不调用模型
@@ -118,7 +118,7 @@ The public build never contains an LLM key. A server deployment can enable `/api
 
 ### Local one-command cooking reports
 
-Edit `config/default_config.json` with separately listed `ingredients` and `seasonings`, a target dish, time, servings, preferences, provider, and model. Use `input_language` (`zh` or `en`) for the values you type, and `report_language` (`zh` or `en`) for the generated report. API keys remain only in ignored `.env` files. Run `python3 scripts/cooking_plan.py --dry-run` for a no-cost deterministic pantry/time check, or `python3 scripts/cooking_plan.py` for a Markdown report. The CLI uses the same recipe catalog and trusted preflight as the web agent rather than sending unverified free text directly to a model.
+Edit `config/default_config.json` with separately listed `ingredients` and `seasonings`, a target dish, time, servings, preferences, provider, and model. `language` is the only language control: `zh` accepts Chinese names and writes a Chinese report, while `en` accepts English names and writes an English report. Set `model_provider` to `deepseek`, `chatgpt` (or `openai`), or `gemini`; `skill_level`, `equipment`, `max_induction_level`, and `allow_extra_purchase` affect the trusted preflight rather than being vague model-only preferences. API keys remain only in ignored `.env` files. Run `python3 scripts/cooking_plan.py --dry-run` for a no-cost deterministic pantry/time check, or `python3 scripts/cooking_plan.py` for a Markdown report. The CLI uses the same recipe catalog and trusted preflight as the web agent rather than sending unverified free text directly to a model.
 
 ### Development
 
