@@ -225,6 +225,10 @@ const basic = (
   tested,
 });
 
+function displayHeat(heat: string, lang: 'zh' | 'en') {
+  return lang === 'en' ? heat.replaceAll('档', '') : heat;
+}
+
 const recipes: Recipe[] = [
   basic(
     'tomato-egg',
@@ -1621,7 +1625,7 @@ export default function Home() {
                 </span>
                 <span className="power">
                   <Zap />
-                  {r.heat}
+                  {displayHeat(r.heat, lang)}
                 </span>
                 <ChevronRight />
               </button>
@@ -1673,7 +1677,7 @@ export default function Home() {
                 </span>
                 <span>
                   <Zap />
-                  <strong>{selected.heat}</strong>
+                  <strong>{displayHeat(selected.heat, lang)}</strong>
                   <small>{t.heat}</small>
                 </span>
               </div>
@@ -1944,7 +1948,7 @@ function RecipeCard({
           </span>
           <span>
             <Zap />
-            {r.heat}
+            {displayHeat(r.heat, lang)}
           </span>
         </footer>
         <div className="open-label">

@@ -1,6 +1,6 @@
 # Shizhi Cooking Agent
 
-[中文说明](#食知-cooking-agent) · [Live demo](https://y36366363.github.io/Cooking_Starter/)
+[English](#shizhi-cooking-agent) · [中文说明](#食知-cooking-agent) · [Live demo](https://y36366363.github.io/Cooking_Starter/)
 
 **Shizhi** is an agent-first, bilingual cooking assistant for people learning to cook with an induction hob—especially international students making Chinese home cooking abroad. It turns a pantry, available time, equipment, and cooking confidence into an honest, practical plan rather than a generic recipe response.
 
