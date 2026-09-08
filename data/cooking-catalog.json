@@ -1,0 +1,38 @@
+{
+  "names": {
+    "tomato": { "zh": "西红柿", "en": "Tomato" },
+    "egg": { "zh": "鸡蛋", "en": "Egg" },
+    "green-pepper": { "zh": "青椒", "en": "Green pepper" },
+    "pork-mince": { "zh": "猪肉末", "en": "Minced pork" },
+    "pork-slice": { "zh": "猪肉片", "en": "Sliced pork" },
+    "cucumber": { "zh": "黄瓜", "en": "Cucumber" },
+    "bok-choy": { "zh": "小白菜", "en": "Bok choy" },
+    "rice": { "zh": "米饭", "en": "Cooked rice" },
+    "broccoli": { "zh": "西兰花", "en": "Broccoli" },
+    "potato": { "zh": "土豆", "en": "Potato" },
+    "tofu": { "zh": "豆腐", "en": "Tofu" },
+    "chicken-wing": { "zh": "鸡翅", "en": "Chicken wings" },
+    "oil": { "zh": "食用油", "en": "Cooking oil" },
+    "salt": { "zh": "盐", "en": "Salt" },
+    "sugar": { "zh": "糖", "en": "Sugar" },
+    "ketchup": { "zh": "番茄酱", "en": "Ketchup" },
+    "light-soy": { "zh": "生抽", "en": "Light soy sauce" },
+    "vinegar": { "zh": "米醋", "en": "Rice vinegar" },
+    "chili-bean-paste": { "zh": "豆瓣酱", "en": "Chili bean paste" },
+    "cola": { "zh": "可乐", "en": "Cola" }
+  },
+  "recipes": [
+    { "id": "tomato-egg", "zh": "西红柿炒鸡蛋", "en": "Tomato & Egg Stir-fry", "minutes": 18, "essential": ["tomato", "egg"], "requiredSeasonings": ["oil"], "heat": "5 → 7 → 5", "safety": "鸡蛋应炒至无流动蛋液。" },
+    { "id": "pepper-mince", "zh": "辣椒炒肉末", "en": "Pepper with Minced Pork", "minutes": 18, "essential": ["green-pepper", "pork-mince"], "requiredSeasonings": ["oil", "light-soy"], "heat": "6 → 8 → 5", "safety": "猪肉末必须完全变色、无粉红。" },
+    { "id": "pepper-pork", "zh": "辣椒炒肉片", "en": "Pepper Pork Stir-fry", "minutes": 25, "essential": ["green-pepper", "pork-slice"], "requiredSeasonings": ["oil", "light-soy"], "heat": "6 → 8 → 5", "safety": "猪肉片必须全熟、无粉红。" },
+    { "id": "cucumber-mince", "zh": "黄瓜炒肉末", "en": "Cucumber with Minced Pork", "minutes": 16, "essential": ["cucumber", "pork-mince"], "requiredSeasonings": ["oil", "light-soy"], "heat": "6 → 8 → 5", "safety": "猪肉末必须完全变色、无粉红。" },
+    { "id": "bok-choy", "zh": "清炒小白菜", "en": "Garlic Bok Choy", "minutes": 10, "essential": ["bok-choy"], "requiredSeasonings": ["oil", "salt"], "heat": "6 → 8 → 4", "safety": "菜叶洗净后充分沥干，避免热油飞溅。" },
+    { "id": "bok-choy-mince", "zh": "小白菜炒肉末", "en": "Bok Choy with Minced Pork", "minutes": 16, "essential": ["bok-choy", "pork-mince"], "requiredSeasonings": ["oil", "light-soy"], "heat": "6 → 8 → 5", "safety": "猪肉末必须完全变色、无粉红。" },
+    { "id": "fried-egg", "zh": "煎荷包蛋", "en": "Induction Fried Egg", "minutes": 6, "essential": ["egg"], "requiredSeasonings": ["oil"], "heat": "5 → 3", "safety": "蛋白须完全凝固；想全熟时不要食用流心蛋黄。" },
+    { "id": "egg-rice", "zh": "鸡蛋炒饭", "en": "Egg Fried Rice", "minutes": 12, "essential": ["rice", "egg"], "requiredSeasonings": ["oil", "salt"], "heat": "6 → 8 → 6", "safety": "米饭应彻底加热至冒热气。" },
+    { "id": "broccoli", "zh": "蒜蓉西兰花", "en": "Garlic Broccoli", "minutes": 14, "essential": ["broccoli"], "requiredSeasonings": ["oil", "salt"], "heat": "5 → 7 → 5", "safety": "西兰花洗净并加热至菜梗刚熟。" },
+    { "id": "potato", "zh": "酸辣土豆丝", "en": "Hot & Sour Potato Slivers", "minutes": 20, "essential": ["potato"], "requiredSeasonings": ["oil", "salt", "vinegar"], "heat": "6 → 8 → 6", "safety": "切丝时注意刀具，入锅前沥干以防溅油。" },
+    { "id": "mapo", "zh": "家常麻婆豆腐", "en": "Easy Mapo Tofu", "minutes": 22, "essential": ["tofu", "pork-mince"], "requiredSeasonings": ["oil", "chili-bean-paste"], "heat": "5 → 7 → 4", "safety": "猪肉末全熟；豆腐轻推，避免碎裂。" },
+    { "id": "wings", "zh": "可乐鸡翅", "en": "Cola Chicken Wings", "minutes": 35, "essential": ["chicken-wing"], "requiredSeasonings": ["oil", "cola", "light-soy"], "heat": "6 → 7 → 3 → 6", "safety": "鸡翅必须完全解冻，最厚处达到 74°C。" }
+  ]
+}

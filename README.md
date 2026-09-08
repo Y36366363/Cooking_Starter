@@ -40,6 +40,23 @@ COOKING_AGENT_ADMIN_CODE=管理员密码         # 不受次数限制
 
 Agent 在生成回答前会运行服务器端菜谱工具：根据目标菜、选中的食材/佐料、人数和可用时间，确定候选菜、必需项、缺少项、标准时间、电磁炉火力路线与安全基线。模型只能把工具找到且材料齐全的 `readyAlternatives` 写成完整替代做法；否则它只能报告最低缺少项，不能编造水、调料或其他设备。
 
+### 本地一键生成烹饪报告
+
+不想每次打开网页填写时，可以直接编辑 [config/default_config.json](config/default_config.json) 中的变量：`ingredients`（食材或佐料名称）、`target_dish`、`time_minutes`、`servings`、`preference`，并选择 `provider` 和 `model`。API Key 仍只放在被 Git 忽略的 `.env`，不要写入配置文件。
+
+```bash
+# 先做免费预检：找菜谱、核对缺料和时间，不调用模型
+python3 scripts/cooking_plan.py --dry-run
+
+# 调用本地 Agent，直接在终端生成 Markdown 报告
+python3 scripts/cooking_plan.py
+
+# 可选：把报告保存为文件
+python3 scripts/cooking_plan.py --output reports/today-plan.md
+```
+
+这个命令不是把一段食材文字直接丢给通用模型：它和网页 Agent 使用同一份 [菜谱目录](data/cooking-catalog.json)，先做确定性的菜谱检索、必需佐料检查、时间预算和电磁炉安全校验，再将可信结果交给模型写成易执行的报告。可另建 `config/local_*.json` 保存个人方案；这些文件不会提交到 Git。
+
 ## 公开预览
 
 GitHub Pages 会在每次 `main` 分支更新后自动构建并发布：
@@ -98,6 +115,10 @@ Shizhi is a bilingual cooking-agent prototype focused on induction hobs. It is d
 The public GitHub Pages build is static. Core recipe features work normally, while guest submissions remain disabled until a secure public backend is connected. The server build already includes a review-queue API backed by D1.
 
 The public build never contains an LLM key. A server deployment can enable `/api/agent` with `DEEPSEEK_API_KEY` (default), `GEMINI_API_KEY` or `OPENAI_API_KEY`, plus `COOKING_AGENT_ACCESS_CODE` (5 requests/hour) and `COOKING_AGENT_ADMIN_CODE` (unlimited). Provider choice and model names are server-only settings; the access code is checked server-side and is never sent to the model.
+
+### Local one-command cooking reports
+
+Edit `config/default_config.json` with a target dish, ingredients and seasonings, time, servings, preferences, provider, and model. API keys remain only in ignored `.env` files. Run `python3 scripts/cooking_plan.py --dry-run` for a no-cost deterministic pantry/time check, or `python3 scripts/cooking_plan.py` for a Markdown report. The CLI uses the same recipe catalog and trusted preflight as the web agent rather than sending unverified free text directly to a model.
 
 ### Development
 
