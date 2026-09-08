@@ -1,0 +1,15 @@
+{
+  "language": "en",
+  "model_provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "target_dish": "Tomato & Egg Stir-fry",
+  "ingredients": ["Tomato", "Egg"],
+  "seasonings": ["Cooking oil", "Salt", "Sugar", "Ketchup"],
+  "time_minutes": 20,
+  "servings": 1,
+  "preference": "Use less oil; do not buy extra items; induction hob only",
+  "skill_level": "beginner",
+  "equipment": ["induction_hob", "frying_pan"],
+  "max_induction_level": 9,
+  "allow_extra_purchase": false
+}

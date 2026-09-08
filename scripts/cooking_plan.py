@@ -38,6 +38,12 @@ def read_json(path: Path) -> dict[str, Any]:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as error:
+        if path == DEFAULT_CONFIG:
+            raise SystemExit(
+                "找不到本地配置。请先复制示例：\n"
+                "cp config/default_config.zh.example.json config/default_config.json\n"
+                "或：cp config/default_config.en.example.json config/default_config.json"
+            ) from error
         raise SystemExit(f"找不到配置文件：{path}") from error
     except json.JSONDecodeError as error:
         raise SystemExit(f"配置文件不是有效 JSON：{error}") from error
@@ -272,6 +278,23 @@ def ask_model(config: dict[str, Any], report: dict[str, Any]) -> str:
     raise SystemExit("model_provider 仅支持 deepseek、openai（或 chatgpt）和 gemini。")
 
 
+def format_result(report: dict[str, Any], answer: str) -> str:
+    """Present the model report without exposing internal preflight JSON."""
+    if report["language"] == "en":
+        title = "# Shizhi Cooking Plan"
+        time_line = f"**Estimated total time: {report['recipeMinutes']} minutes**"
+        if report["availableMinutes"] is not None:
+            time_line += f" · Available time: {report['availableMinutes']} minutes"
+        report_heading = "## AI Recommendation Report"
+    else:
+        title = "# 食知烹饪计划"
+        time_line = f"**预计总用时：{report['recipeMinutes']} 分钟**"
+        if report["availableMinutes"] is not None:
+            time_line += f" · 可用时间：{report['availableMinutes']} 分钟"
+        report_heading = "## AI 推荐报告"
+    return f"{title}\n\n{time_line}\n\n{report_heading}\n\n{answer}\n"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="用菜谱工具与 AI 生成本地烹饪计划")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="JSON 配置文件路径")
@@ -287,7 +310,7 @@ def main() -> None:
         print(preflight)
         return
     answer = ask_model(config, report)
-    result = f"# 食知烹饪计划\n\n## 工具预检\n```json\n{preflight}\n```\n\n## AI 推荐报告\n\n{answer}\n"
+    result = format_result(report, answer)
     print(result)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

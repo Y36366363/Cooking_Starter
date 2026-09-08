@@ -58,49 +58,50 @@ COOKING_AGENT_ADMIN_CODE=long-private-admin-code
 
 The visitor code is checked by the server and is not passed to a model. The basic in-memory limit is five requests per hour for a visitor code; the administrator code is unlimited. For a multi-instance production deployment, move rate-limit state to shared storage such as Cloudflare KV or D1.
 
-## Local agent: one configuration, one command
+## Local agent: private configuration, one command
 
-Edit [`config/default_config.json`](config/default_config.json), then run the local planner. Keep API keys in the ignored `.env` file—never in this JSON file.
+Your own `config/default_config.json` is deliberately ignored by Git, so editing it will never be uploaded. Start by copying one of the tracked examples; the Chinese and English examples are safe to share and update.
 
 ```bash
-# Free preflight: recipe retrieval, pantry check, equipment/time/heat validation
+cp config/default_config.en.example.json config/default_config.json
+# or
+cp config/default_config.zh.example.json config/default_config.json
+```
+
+Then edit your private `config/default_config.json`. Keep API keys in the ignored `.env` file—never in this JSON file.
+
+```bash
+# Optional free preflight: recipe retrieval, pantry check, equipment/time/heat validation
 python3 scripts/cooking_plan.py --dry-run
 
-# Ask the chosen model to turn the verified result into a Markdown cooking report
+# Ask the chosen model for a clean Markdown report
 python3 scripts/cooking_plan.py
 
 # Save the report
 python3 scripts/cooking_plan.py --output reports/today-plan.md
 ```
 
-| Field | Purpose |
-| --- | --- |
-| `language` | The sole language setting. `en` accepts English pantry names and returns an English report; `zh` does the same in Chinese. |
-| `model_provider` | `deepseek`, `chatgpt` (or `openai`), or `gemini`. |
-| `model` | Model name for the chosen provider. |
-| `ingredients` / `seasonings` | Kept separate so missing essentials and missing seasonings are reported accurately. |
-| `target_dish`, `time_minutes`, `servings`, `preference` | The cooking goal and constraints. |
-| `skill_level` | `beginner` produces more explicit cutting, pan-entry, and visible stop conditions. |
-| `equipment` | Declares available equipment, for example `induction_hob` and `frying_pan`. |
-| `max_induction_level` | Prevents plans that need a higher hob setting than the user can use. |
-| `allow_extra_purchase` | When enabled, the agent can provide the minimum verified shopping list before cooking. |
+The normal report hides the internal `Tool Preflight` JSON. It begins with `# Shizhi Cooking Plan`, shows the recipe's estimated total time and available time, then uses the heading `## AI Recommendation Report`. Use `--dry-run` only when you want to inspect the raw deterministic check.
 
-```json
-{
-  "language": "en",
-  "model_provider": "deepseek",
-  "model": "deepseek-v4-flash",
-  "target_dish": "Tomato & Egg Stir-fry",
-  "ingredients": ["Tomato", "Egg"],
-  "seasonings": ["Cooking oil", "Salt"],
-  "time_minutes": 20,
-  "servings": 1,
-  "skill_level": "beginner",
-  "equipment": ["induction_hob", "frying_pan"],
-  "max_induction_level": 9,
-  "allow_extra_purchase": false
-}
-```
+### Complete local configuration reference
+
+| Field | Accepted values / range | Notes |
+| --- | --- | --- |
+| `language` | `en` or `zh` | The only language setting. It controls both accepted pantry names and report language. |
+| `model_provider` | `deepseek`, `chatgpt`, `openai`, `gemini` | `chatgpt` is an alias for `openai`. |
+| `model` | Provider model name | Recommended current defaults: `deepseek-v4-flash`, `gpt-4o-mini`, `gemini-3.5-flash-lite`. The provider validates other model names. |
+| `target_dish` | A listed recipe name, or a partial name | Recognised dishes: Tomato & Egg Stir-fry; Pepper with Minced Pork; Pepper Pork Stir-fry; Cucumber with Minced Pork; Garlic Bok Choy; Bok Choy with Minced Pork; Induction Fried Egg; Egg Fried Rice; Garlic Broccoli; Hot & Sour Potato Slivers; Easy Mapo Tofu; Cola Chicken Wings. |
+| `ingredients` | Array of validated food names | English choices: Tomato, Egg, Green pepper, Minced pork, Sliced pork, Cucumber, Bok choy, Cooked rice, Broccoli, Potato, Tofu, Chicken wings. |
+| `seasonings` | Array of validated seasoning names | English choices: Cooking oil, Salt, Sugar, Ketchup, Light soy sauce, Rice vinegar, Chili bean paste, Cola. |
+| `time_minutes` | Whole number `0`–`240` | `0` means no time limit; otherwise the agent compares it with the recipe's estimated total time. |
+| `servings` | Whole number `1`–`8` | Used in the report plan. |
+| `preference` | Optional plain text | Examples: `less oil`, `no extra shopping`, or `no spicy food`. |
+| `skill_level` | `beginner`, `intermediate`, `advanced` | `beginner` adds more cutting, pan-entry, and visible stop conditions. |
+| `equipment` | `induction_hob`, `frying_pan` | Both are currently required for the induction recipes. |
+| `max_induction_level` | Whole number `1`–`9` | Plans requiring a higher setting are marked as unsuitable. |
+| `allow_extra_purchase` | `true` or `false` | With `true`, a missing-item plan may provide the minimum verified shopping list. |
+
+The exact Chinese input names are in [`config/default_config.zh.example.json`](config/default_config.zh.example.json); English names are in [`config/default_config.en.example.json`](config/default_config.en.example.json).
 
 ## Run the web app locally
 
@@ -191,32 +192,50 @@ COOKING_AGENT_ADMIN_CODE=高强度管理员密码
 
 访客密码只由服务器验证，不会发给模型。基础实现中，访客密码每小时最多请求五次，管理员密码不限次数；正式多实例部署时，建议把限流状态迁移到 Cloudflare KV 或 D1。
 
-## 本地 Agent：编辑一次，直接运行
+## 本地 Agent：个人配置不上传，复制后直接运行
 
-编辑 [`config/default_config.json`](config/default_config.json) 后即可运行本地计划器。API Key 只放在被 Git 忽略的 `.env`，绝不能写入 JSON 配置。
+你自己的 `config/default_config.json` 已被 Git 忽略，之后怎样修改都不会上传到 GitHub。先从已上传的中英文示例复制一份：
 
 ```bash
-# 免费预检：菜谱检索、食材 / 佐料 / 设备 / 时间 / 火力核对
+cp config/default_config.zh.example.json config/default_config.json
+# 或
+cp config/default_config.en.example.json config/default_config.json
+```
+
+然后只编辑本地的 `config/default_config.json`。API Key 只放在被 Git 忽略的 `.env`，绝不能写入 JSON 配置。
+
+```bash
+# 可选免费预检：菜谱检索、食材 / 佐料 / 设备 / 时间 / 火力核对
 python3 scripts/cooking_plan.py --dry-run
 
-# 调用已选择的模型，生成 Markdown 烹饪报告
+# 调用已选择的模型，生成整洁的 Markdown 烹饪报告
 python3 scripts/cooking_plan.py
 
 # 保存报告
 python3 scripts/cooking_plan.py --output reports/today-plan.md
 ```
 
-| 配置项 | 用途 |
-| --- | --- |
-| `language` | 唯一的语言设置。`zh` 用中文识别并输出中文报告，`en` 用英文识别并输出英文报告。 |
-| `model_provider` | `deepseek`、`chatgpt`（或 `openai`）、`gemini`。 |
-| `model` | 对应提供商的模型名。 |
-| `ingredients` / `seasonings` | 主食材与佐料分开，才能准确报告缺少的必需项。 |
-| `target_dish`、`time_minutes`、`servings`、`preference` | 目标菜与计划条件。 |
-| `skill_level` | `beginner` 会细化切配、下锅时机和可观察完成状态。 |
-| `equipment` | 声明已有设备，例如 `induction_hob` 与 `frying_pan`。 |
-| `max_induction_level` | 防止推荐超过用户设备可用档位的做法。 |
-| `allow_extra_purchase` | 开启后，缺料时可先给出经工具验证的最低采购清单。 |
+正常运行不再显示内部的“工具预检”JSON；英文报告以 `# Shizhi Cooking Plan` 和 `## AI Recommendation Report` 开头，并显示菜谱预计总用时和可用时间。只有运行 `--dry-run` 时才会展示原始的确定性预检结果。
+
+### 本地配置完整参数说明
+
+| 配置项 | 可选值 / 范围 | 说明 |
+| --- | --- | --- |
+| `language` | `zh`、`en` | 唯一语言设置，同时控制食材识别语言和报告语言。 |
+| `model_provider` | `deepseek`、`chatgpt`、`openai`、`gemini` | `chatgpt` 是 `openai` 的别名。 |
+| `model` | 对应提供商模型名 | 当前推荐默认值：`deepseek-v4-flash`、`gpt-4o-mini`、`gemini-3.5-flash-lite`；其他模型名由提供商验证。 |
+| `target_dish` | 已收录菜名或部分菜名 | 可识别菜谱：西红柿炒鸡蛋、辣椒炒肉末、辣椒炒肉片、黄瓜炒肉末、清炒小白菜、小白菜炒肉末、煎荷包蛋、鸡蛋炒饭、蒜蓉西兰花、酸辣土豆丝、家常麻婆豆腐、可乐鸡翅。 |
+| `ingredients` | 已验证食材组成的数组 | 中文可选：西红柿、鸡蛋、青椒、猪肉末、猪肉片、黄瓜、小白菜、米饭、西兰花、土豆、豆腐、鸡翅。 |
+| `seasonings` | 已验证佐料组成的数组 | 中文可选：食用油、盐、糖、番茄酱、生抽、米醋、豆瓣酱、可乐。 |
+| `time_minutes` | 整数 `0`–`240` | `0` 代表不限制时间；其他值会与菜谱预计总用时比较。 |
+| `servings` | 整数 `1`–`8` | 用于生成计划。 |
+| `preference` | 可选自由文本 | 例如“少油”“不额外购买”“不吃辣”。 |
+| `skill_level` | `beginner`、`intermediate`、`advanced` | `beginner` 会更细化切配、下锅时机和可观察完成状态。 |
+| `equipment` | `induction_hob`、`frying_pan` | 当前电磁炉菜谱需要同时填写这两项。 |
+| `max_induction_level` | 整数 `1`–`9` | 需要更高档位的菜会被标记为不适合。 |
+| `allow_extra_purchase` | `true`、`false` | `true` 时，缺料计划可以给出经验证的最低采购清单。 |
+
+完整的中文食材输入见 [`config/default_config.zh.example.json`](config/default_config.zh.example.json)，英文输入见 [`config/default_config.en.example.json`](config/default_config.en.example.json)。
 
 ## 本地运行网页
 

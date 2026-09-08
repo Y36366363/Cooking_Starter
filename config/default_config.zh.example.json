@@ -7,7 +7,7 @@
   "seasonings": ["食用油", "盐", "糖", "番茄酱"],
   "time_minutes": 20,
   "servings": 1,
-  "preference": "少油；不要额外购买",
+  "preference": "少油；不额外购买；使用电磁炉",
   "skill_level": "beginner",
   "equipment": ["induction_hob", "frying_pan"],
   "max_induction_level": 9,
