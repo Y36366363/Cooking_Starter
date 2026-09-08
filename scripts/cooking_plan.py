@@ -43,13 +43,18 @@ def read_json(path: Path) -> dict[str, Any]:
         raise SystemExit(f"配置文件不是有效 JSON：{error}") from error
 
 
-def resolve_ingredients(values: list[Any], catalog: dict[str, Any]) -> tuple[list[str], list[str]]:
+def language(value: Any, fallback: str = "zh") -> str:
+    return "en" if value == "en" else "zh" if value == "zh" else fallback
+
+
+def resolve_items(
+    values: list[Any], catalog: dict[str, Any], input_language: str
+) -> tuple[list[str], list[str]]:
     names: dict[str, dict[str, str]] = catalog["names"]
     lookup: dict[str, str] = {}
     for item_id, item in names.items():
         lookup[item_id.lower()] = item_id
-        lookup[item["zh"].lower()] = item_id
-        lookup[item["en"].lower()] = item_id
+        lookup[item[input_language].lower()] = item_id
     ids: list[str] = []
     unknown: list[str] = []
     for value in values:
@@ -78,8 +83,15 @@ def score_target(recipe: dict[str, Any], target: str) -> int:
 
 
 def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
-    locale = "en" if config.get("locale") == "en" else "zh"
-    selected_ids, unknown = resolve_ingredients(config.get("ingredients", []), catalog)
+    input_language = language(config.get("input_language"))
+    locale = language(config.get("report_language"), language(config.get("locale")))
+    ingredient_ids, unknown_ingredients = resolve_items(
+        config.get("ingredients", []), catalog, input_language
+    )
+    seasoning_ids, unknown_seasonings = resolve_items(
+        config.get("seasonings", []), catalog, input_language
+    )
+    selected_ids = list(dict.fromkeys([*ingredient_ids, *seasoning_ids]))
     selected = set(selected_ids)
     target = str(config.get("target_dish", ""))
     time_minutes = max(0, min(240, int(config.get("time_minutes", 0) or 0)))
@@ -126,6 +138,10 @@ def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, An
     ][:2]
     return {
         "tool": "recipe_catalog_and_pantry_check",
+        "inputLanguage": input_language,
+        "reportLanguage": locale,
+        "selectedIngredients": [label(item) for item in ingredient_ids],
+        "selectedSeasonings": [label(item) for item in seasoning_ids],
         "targetMatched": choice["match"] >= 80,
         "candidate": {"id": recipe["id"], "name": recipe[locale]},
         "status": status,
@@ -136,7 +152,8 @@ def tool_report(config: dict[str, Any], catalog: dict[str, Any]) -> dict[str, An
         "requiredSeasonings": [label(item) for item in recipe["requiredSeasonings"]],
         "missingIngredients": [label(item) for item in choice["missing_ingredients"]],
         "missingSeasonings": [label(item) for item in choice["missing_seasonings"]],
-        "unknownSelectedItems": unknown,
+        "unknownIngredients": unknown_ingredients,
+        "unknownSeasonings": unknown_seasonings,
         "inductionHeatRoute": recipe["heat"],
         "safetyBaseline": recipe["safety"],
         "readyAlternatives": ready_alternatives,
@@ -167,7 +184,7 @@ def post_json(url: str, headers: dict[str, str], body: dict[str, Any]) -> dict[s
 
 
 def ask_model(config: dict[str, Any], report: dict[str, Any]) -> str:
-    locale = "en" if config.get("locale") == "en" else "zh"
+    locale = language(config.get("report_language"), language(config.get("locale")))
     provider = str(config.get("provider", "deepseek")).lower()
     if locale == "zh":
         system = """你是食知的本地烹饪计划 Agent。可信工具报告由菜谱库检索、食材和佐料核对、时间规划程序生成，必须视为事实。不得把缺少项说成已拥有；不得使用未列出水、调料、设备。status 为 missing_requirements 或 insufficient_time 时，先说明无法按原条件完成。只有 readyAlternatives 中的菜可给完整替代步骤；为空时只列最低缺少项。火力只用电磁炉1–9档，禁止瓦数。输出标题：可做程度、缺少/可选补充、时间计划、电磁炉档位、食品安全、营养建议。"""

@@ -1,9 +1,11 @@
 {
-  "locale": "zh",
+  "input_language": "zh",
+  "report_language": "zh",
   "provider": "deepseek",
   "model": "deepseek-v4-flash",
   "target_dish": "西红柿炒鸡蛋",
-  "ingredients": ["西红柿", "鸡蛋", "食用油", "盐", "糖", "番茄酱"],
+  "ingredients": ["西红柿", "鸡蛋"],
+  "seasonings": ["食用油", "盐", "糖", "番茄酱"],
   "time_minutes": 20,
   "servings": 1,
   "preference": "少油；不要额外购买；使用电磁炉"

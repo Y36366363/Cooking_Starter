@@ -42,7 +42,7 @@ Agent 在生成回答前会运行服务器端菜谱工具：根据目标菜、�
 
 ### 本地一键生成烹饪报告
 
-不想每次打开网页填写时，可以直接编辑 [config/default_config.json](config/default_config.json) 中的变量：`ingredients`（食材或佐料名称）、`target_dish`、`time_minutes`、`servings`、`preference`，并选择 `provider` 和 `model`。API Key 仍只放在被 Git 忽略的 `.env`，不要写入配置文件。
+不想每次打开网页填写时，可以直接编辑 [config/default_config.json](config/default_config.json) 中的变量：`ingredients`（主食材）和 `seasonings`（佐料）分开填写；`target_dish`、`time_minutes`、`servings`、`preference` 用于计划条件。`input_language` 控制配置里食材名称使用中文（`zh`）还是英文（`en`），`report_language` 独立控制报告输出语言。API Key 仍只放在被 Git 忽略的 `.env`，不要写入配置文件。
 
 ```bash
 # 先做免费预检：找菜谱、核对缺料和时间，不调用模型
@@ -118,7 +118,7 @@ The public build never contains an LLM key. A server deployment can enable `/api
 
 ### Local one-command cooking reports
 
-Edit `config/default_config.json` with a target dish, ingredients and seasonings, time, servings, preferences, provider, and model. API keys remain only in ignored `.env` files. Run `python3 scripts/cooking_plan.py --dry-run` for a no-cost deterministic pantry/time check, or `python3 scripts/cooking_plan.py` for a Markdown report. The CLI uses the same recipe catalog and trusted preflight as the web agent rather than sending unverified free text directly to a model.
+Edit `config/default_config.json` with separately listed `ingredients` and `seasonings`, a target dish, time, servings, preferences, provider, and model. Use `input_language` (`zh` or `en`) for the values you type, and `report_language` (`zh` or `en`) for the generated report. API keys remain only in ignored `.env` files. Run `python3 scripts/cooking_plan.py --dry-run` for a no-cost deterministic pantry/time check, or `python3 scripts/cooking_plan.py` for a Markdown report. The CLI uses the same recipe catalog and trusted preflight as the web agent rather than sending unverified free text directly to a model.
 
 ### Development
 
