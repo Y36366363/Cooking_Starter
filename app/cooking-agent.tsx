@@ -75,6 +75,7 @@ type Recipe = {
   minutes: number;
   heat: string;
   imageIndex: number;
+  imageSrc?: string;
   tested?: boolean;
   essential: string[];
   optional: string[];
@@ -139,6 +140,7 @@ const pantryItems: PantryItem[] = [
   ['egg', '鸡蛋', 'Egg', 'protein', ['eggs']],
   ['pork-mince', '猪肉末', 'Minced pork', 'protein', ['肉末', 'ground pork']],
   ['pork-slice', '猪肉片', 'Sliced pork', 'protein'],
+  ['pork-loin', '猪里脊肉', 'Pork loin', 'protein', ['center cut loin', 'loin']],
   ['pork-belly', '五花肉', 'Pork belly', 'protein'],
   ['rib', '排骨', 'Pork ribs', 'protein'],
   ['chicken-breast', '鸡胸肉', 'Chicken breast', 'protein'],
@@ -172,6 +174,8 @@ const pantryItems: PantryItem[] = [
   ['chicken-bouillon', '鸡精', 'Chicken bouillon', 'seasoning'],
   ['sichuan-peppercorn', '花椒', 'Sichuan peppercorn', 'seasoning'],
   ['cola', '可乐', 'Cola', 'seasoning'],
+  ['japanese-curry-roux', '日式咖喱块', 'Japanese curry roux', 'seasoning', ['S&B Golden Curry', 'Golden Curry', '咖喱块', 'curry block']],
+  ['water', '清水', 'Water', 'other'],
   ['milk', '牛奶', 'Milk', 'other'],
   ['seaweed', '紫菜', 'Dried seaweed', 'other'],
   ['pickle', '榨菜', 'Pickled mustard', 'other'],
@@ -208,6 +212,7 @@ const basic = (
   minutes = 15,
   heat = '6档 → 8档 → 5档',
   tested = false,
+  imageSrc?: string,
 ): Recipe => ({
   id,
   zh,
@@ -223,6 +228,7 @@ const basic = (
   minutes,
   heat,
   tested,
+  imageSrc,
 });
 
 function displayHeat(heat: string, lang: 'zh' | 'en') {
@@ -634,6 +640,62 @@ const recipes: Recipe[] = [
     16,
     '6档 → 7档 → 6档',
     true,
+  ),
+  basic(
+    'japanese-curry-pork-rice',
+    '日式咖喱猪肉土豆饭',
+    'Japanese Curry Pork and Potato Rice',
+    12,
+    ['pork-loin', 'potato', 'carrot', 'onion', 'rice', 'water'],
+    [],
+    [
+      S('食用油', 'Cooking oil', true, '约 1/2–1 个瓶盖', 'About 1/2–1 capful'),
+      S('生抽', 'Light soy sauce', true, '约 1/2 个瓶盖', 'About 1/2 capful'),
+      S('糖', 'Sugar', true, '一小撮', 'A small pinch'),
+      S('日式咖喱块', 'Japanese curry roux', true, 'S&B Golden Curry 2 小块', '2 S&B Golden Curry cubes'),
+    ],
+    '猪里脊、土豆、胡萝卜和洋葱煮成温和浓郁的日式咖喱，浇在米饭上。咖喱块已有咸味，一般不用额外加盐。',
+    'Pork loin, potato, carrot, and onion simmered into a mild, rich Japanese curry to serve over rice. The curry roux is already salty, so extra salt is usually unnecessary.',
+    [
+      P(
+        '备菜并腌肉',
+        'Prepare and marinate',
+        '取约 100 克猪里脊，逆着纹理切成约 1.5 × 1.5 厘米小块。加约半个瓶盖生抽、几滴油和一小撮糖，抓匀腌 10–15 分钟。土豆切约 2 厘米块，胡萝卜切小丁，洋葱去外皮切小块。另备约 300 毫升清水、2 个 S&B Golden Curry 小块和米饭。',
+        'Cut about 100 g pork loin against the grain into 1.5 × 1.5 cm pieces. Toss with about 1/2 capful light soy sauce, a few drops of oil, and a pinch of sugar. Marinate for 10–15 minutes. Cut potato into 2 cm chunks, carrot into small dice, and peeled onion into chunks. Measure about 300 ml water, prepare 2 S&B Golden Curry cubes, and have rice ready.',
+      ),
+      P(
+        '炒猪肉后盛出',
+        'Brown pork and remove',
+        '小不粘锅调到 6 档中火，加入约半个到一个瓶盖的油。下猪肉炒到表面变白、略微上色，立刻盛出备用，不要在这一步久炒。',
+        'Set a small nonstick pan to level 6. Add about 1/2–1 capful oil. Cook pork until the surface turns white with a little color, then remove it promptly. Do not overcook it at this stage.',
+        6,
+      ),
+      P(
+        '煮软蔬菜',
+        'Simmer the vegetables',
+        '锅中下洋葱，5 档炒软后加入胡萝卜和土豆翻炒。倒入约 300 毫升水，不盖锅盖，调 4 档中小火煮 15–20 分钟，直到筷子能较容易插入土豆。',
+        'Add onion to the pan and soften it at level 5, then toss in carrot and potato. Add about 300 ml water. Leave uncovered and simmer at level 4 for 15–20 minutes, until a chopstick can enter the potato easily.',
+        4,
+      ),
+      P(
+        '融化咖喱块',
+        'Dissolve the curry roux',
+        '关火后加入 2 个日式咖喱小块，搅拌到完全融化。咖喱块本身已有盐，通常不要再加盐。',
+        'Switch the hob off, add 2 curry roux cubes, and stir until completely dissolved. The roux is already salty, so usually do not add more salt.',
+      ),
+      P(
+        '回锅煮熟并浇饭',
+        'Finish and serve over rice',
+        '把猪肉倒回锅中，调 3 档小火煮 4–6 分钟，确认猪肉中心完全熟透、没有粉红。太稠就少量加水，太稀则略收汁，最后浇在米饭上。',
+        'Return the pork to the pan and cook at level 3 for 4–6 minutes. Confirm the center is fully cooked with no pink remaining. Add a little water if too thick or reduce briefly if too thin, then serve over rice.',
+        3,
+      ),
+    ],
+    2,
+    40,
+    '6档 → 5档 → 4档 → 3档',
+    true,
+    '/Cooking_Starter/recipes/japanese-curry-pork-rice.png',
   ),
   basic(
     'broccoli',
@@ -1866,12 +1928,19 @@ function RecipeImage({
 }) {
   const col = recipe.imageIndex % 4,
     row = Math.floor(recipe.imageIndex / 4);
+  const isCustomImage = Boolean(recipe.imageSrc);
   return (
     <div
       className={`recipe-photo${large ? ' large' : ''}`}
       role="img"
       aria-label={`${recipe.zh} / ${recipe.en}`}
-      style={{ backgroundPosition: `${(col * 100) / 3}% ${row * 50}%` }}
+      style={{
+        backgroundImage: `url('${recipe.imageSrc || '/Cooking_Starter/recipes/chinese-home-dishes-grid.png'}')`,
+        backgroundPosition: isCustomImage
+          ? 'center'
+          : `${(col * 100) / 3}% ${row * 50}%`,
+        backgroundSize: isCustomImage ? 'cover' : '400% 300%',
+      }}
     />
   );
 }
