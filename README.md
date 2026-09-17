@@ -113,6 +113,27 @@ pnpm dev
 pnpm build
 ```
 
+## Validation
+
+The repository currently uses build, lint, and deterministic dry-run checks rather than a comprehensive automated test suite.
+
+Validate the web application:
+
+```bash
+pnpm install
+pnpm lint
+pnpm build
+```
+
+Validate the local planning workflow without calling an external model:
+
+```bash
+cp config/default_config.en.example.json config/default_config.json
+python3 scripts/cooking_plan.py --dry-run
+```
+
+The dry run checks recipe retrieval and declared pantry, equipment, time, and induction-level constraints. It does not evaluate the quality of an LLM-generated recommendation.
+
 ## Technology
 
 - React 19 + TypeScript
@@ -246,6 +267,27 @@ pnpm install
 pnpm dev
 pnpm build
 ```
+
+## 验证方式
+
+本项目目前使用构建、代码检查和确定性预检，而不是宣称已经具备完整的自动化测试套件。
+
+检查网页项目：
+
+```bash
+pnpm install
+pnpm lint
+pnpm build
+```
+
+在不调用外部模型的情况下检查本地规划流程：
+
+```bash
+cp config/default_config.zh.example.json config/default_config.json
+python3 scripts/cooking_plan.py --dry-run
+```
+
+预检会核对菜谱检索以及已声明的食材、设备、时间和电磁炉档位限制，但不会评价语言模型生成建议的质量。
 
 ## 技术结构
 
