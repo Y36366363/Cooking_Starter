@@ -151,6 +151,23 @@ The dry run checks recipe retrieval and declared pantry, equipment, time, and in
 - Guided cooking sessions with timers and step checklists
 - Reviewed community recipes and safe submission notifications
 
+## License and media provenance
+
+This project—including its original source code, recipe catalog, documentation,
+and project-specific media—is licensed under the [MIT License](LICENSE).
+
+The following images were generated specifically for this project using
+OpenAI's image generation service. They were not copied from stock libraries,
+websites, or third-party photographs, and their files retain OpenAI Media
+Service API generation metadata:
+
+- `public/kitchen-workspace.png`
+- `public/recipes/chinese-home-dishes-grid.png`
+- `public/recipes/japanese-curry-pork-rice.png`
+
+Open-source UI components and icon libraries retain their original licenses;
+see [Third-Party Notices](THIRD_PARTY_NOTICES.md).
+
 ---
 
 # 食知 Cooking Agent
@@ -305,3 +322,18 @@ python3 scripts/cooking_plan.py --dry-run
 - 过敏原、饮食限制、预算与营养筛选
 - 带计时器与步骤清单的实时烹饪陪伴
 - 审核后的社区菜谱与安全投稿通知
+
+## 许可证与图片来源
+
+本项目的原创源代码、菜谱目录、文档及项目专用媒体素材均采用
+[MIT License](LICENSE) 发布。
+
+以下图片均使用 OpenAI 图像生成服务专门为本项目制作，并非取自图库、
+网站或第三方摄影作品；原始文件中保留了 OpenAI Media Service API 的生成元数据：
+
+- `public/kitchen-workspace.png`
+- `public/recipes/chinese-home-dishes-grid.png`
+- `public/recipes/japanese-curry-pork-rice.png`
+
+项目使用的开源 UI 组件和图标库继续适用其各自的原始许可证，详见
+[第三方声明](THIRD_PARTY_NOTICES.md)。
